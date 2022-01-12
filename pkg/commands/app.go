@@ -318,6 +318,7 @@ var (
 		&offlineScan,
 		stringSliceFlag(skipFiles),
 		stringSliceFlag(skipDirs),
+		stringSliceFlag(filePatterns),
 	}
 )
 
@@ -479,6 +480,7 @@ func NewFilesystemCommand() *cli.Command {
 			&offlineScan,
 			stringSliceFlag(skipFiles),
 			stringSliceFlag(skipDirs),
+			stringSliceFlag(filePatterns),
 			stringSliceFlag(configPolicy),
 			stringSliceFlag(configData),
 			stringSliceFlag(policyNamespaces),
@@ -514,6 +516,7 @@ func NewRootfsCommand() *cli.Command {
 			&offlineScan,
 			stringSliceFlag(skipFiles),
 			stringSliceFlag(skipDirs),
+			stringSliceFlag(filePatterns),
 			stringSliceFlag(configPolicy),
 			stringSliceFlag(configData),
 			stringSliceFlag(policyNamespaces),
@@ -552,6 +555,7 @@ func NewRepositoryCommand() *cli.Command {
 			&offlineScan,
 			stringSliceFlag(skipFiles),
 			stringSliceFlag(skipDirs),
+			stringSliceFlag(filePatterns),
 		},
 	}
 }
@@ -582,6 +586,7 @@ func NewClientCommand() *cli.Command {
 			&ignorePolicy,
 			stringSliceFlag(skipFiles),
 			stringSliceFlag(skipDirs),
+			stringSliceFlag(filePatterns),
 			stringSliceFlag(configPolicy),
 			&listAllPackages,
 			&offlineScan,
@@ -651,10 +656,10 @@ func NewConfigCommand() *cli.Command {
 			&timeoutFlag,
 			stringSliceFlag(skipFiles),
 			stringSliceFlag(skipDirs),
+			stringSliceFlag(filePatterns),
 			stringSliceFlag(configPolicyAlias),
 			stringSliceFlag(configDataAlias),
 			stringSliceFlag(policyNamespaces),
-			stringSliceFlag(filePatterns),
 			&includeNonFailures,
 			&traceFlag,
 		},

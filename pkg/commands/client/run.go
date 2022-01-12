@@ -150,11 +150,10 @@ func initializeScanner(ctx context.Context, opt Option) (scanner.Scanner, func()
 		}
 
 		configScannerOptions = config.ScannerOption{
-			Trace:        opt.Trace,
-			Namespaces:   append(opt.PolicyNamespaces, defaultPolicyNamespace),
-			PolicyPaths:  append(opt.PolicyPaths, builtinPolicyPaths...),
-			DataPaths:    opt.DataPaths,
-			FilePatterns: opt.FilePatterns,
+			Trace:       opt.Trace,
+			Namespaces:  append(opt.PolicyNamespaces, defaultPolicyNamespace),
+			PolicyPaths: append(opt.PolicyPaths, builtinPolicyPaths...),
+			DataPaths:   opt.DataPaths,
 		}
 	}
 
@@ -162,6 +161,7 @@ func initializeScanner(ctx context.Context, opt Option) (scanner.Scanner, func()
 		DisabledAnalyzers: disabledAnalyzers(opt),
 		SkipFiles:         opt.SkipFiles,
 		SkipDirs:          opt.SkipDirs,
+		FilePatterns:      opt.FilePatterns,
 		Offline:           opt.OfflineScan,
 	}
 
