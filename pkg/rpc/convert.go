@@ -11,7 +11,6 @@ import (
 	deptypes "github.com/aquasecurity/go-dep-parser/pkg/types"
 	dbTypes "github.com/aquasecurity/trivy-db/pkg/types"
 	"github.com/aquasecurity/trivy/pkg/log"
-	"github.com/aquasecurity/trivy/pkg/report"
 	"github.com/aquasecurity/trivy/pkg/types"
 	"github.com/aquasecurity/trivy/rpc/cache"
 	"github.com/aquasecurity/trivy/rpc/common"
@@ -193,20 +192,38 @@ func ConvertToRPCDataSource(ds *dbTypes.DataSource) *common.DataSource {
 	}
 }
 
-// ConvertFromRPCResults converts scanner.Result to report.Result
-func ConvertFromRPCResults(rpcResults []*scanner.Result) []report.Result {
-	var results []report.Result
+// ConvertFromRPCResults converts scanner.Result to types.Result
+func ConvertFromRPCResults(rpcResults []*scanner.Result) []types.Result {
+	var results []types.Result
 	for _, result := range rpcResults {
-		results = append(results, report.Result{
+		results = append(results, types.Result{
 			Target:            result.Target,
 			Vulnerabilities:   ConvertFromRPCVulns(result.Vulnerabilities),
 			Misconfigurations: ConvertFromRPCMisconfs(result.Misconfigurations),
-			Class:             report.ResultClass(result.Class),
+			Class:             types.ResultClass(result.Class),
 			Type:              result.Type,
 			Packages:          ConvertFromRPCPkgs(result.Packages),
+			CustomResources:   ConvertFromRPCCustomResources(result.CustomResources),
 		})
 	}
 	return results
+}
+
+// ConvertFromRPCCustomResources converts array of cache.CustomResource to fanal.CustomResource
+func ConvertFromRPCCustomResources(rpcCustomResources []*common.CustomResource) []ftypes.CustomResource {
+	var resources []ftypes.CustomResource
+	for _, res := range rpcCustomResources {
+		resources = append(resources, ftypes.CustomResource{
+			Type:     res.Type,
+			FilePath: res.FilePath,
+			Layer: ftypes.Layer{
+				Digest: res.Layer.Digest,
+				DiffID: res.Layer.DiffId,
+			},
+			Data: res.Data,
+		})
+	}
+	return resources
 }
 
 // ConvertFromRPCVulns converts []*common.Vulnerability to []types.DetectedVulnerability
@@ -403,6 +420,7 @@ func ConvertFromRPCPutBlobRequest(req *cache.PutBlobRequest) ftypes.BlobInfo {
 		Misconfigurations: ConvertFromRPCMisconfigurations(req.BlobInfo.Misconfigurations),
 		OpaqueDirs:        req.BlobInfo.OpaqueDirs,
 		WhiteoutFiles:     req.BlobInfo.WhiteoutFiles,
+		CustomResources:   ConvertFromRPCCustomResources(req.BlobInfo.CustomResources),
 	}
 }
 
@@ -478,6 +496,24 @@ func ConvertToRPCBlobInfo(diffID string, blobInfo ftypes.BlobInfo) *cache.PutBlo
 
 	}
 
+	var customResources []*common.CustomResource
+	for _, res := range blobInfo.CustomResources {
+		data, err := structpb.NewValue(res.Data)
+		if err != nil {
+
+		} else {
+			customResources = append(customResources, &common.CustomResource{
+				Type:     res.Type,
+				FilePath: res.FilePath,
+				Layer: &common.Layer{
+					Digest: res.Layer.Digest,
+					DiffId: res.Layer.DiffID,
+				},
+				Data: data,
+			})
+		}
+	}
+
 	return &cache.PutBlobRequest{
 		DiffId: diffID,
 		BlobInfo: &cache.BlobInfo{
@@ -490,6 +526,7 @@ func ConvertToRPCBlobInfo(diffID string, blobInfo ftypes.BlobInfo) *cache.PutBlo
 			Misconfigurations: misconfigurations,
 			OpaqueDirs:        blobInfo.OpaqueDirs,
 			WhiteoutFiles:     blobInfo.WhiteoutFiles,
+			CustomResources:   customResources,
 		},
 	}
 }
@@ -518,8 +555,8 @@ func ConvertToMissingBlobsRequest(imageID string, layerIDs []string) *cache.Miss
 	}
 }
 
-// ConvertToRPCScanResponse converts report.Result to ScanResponse
-func ConvertToRPCScanResponse(results report.Results, fos *ftypes.OS) *scanner.ScanResponse {
+// ConvertToRPCScanResponse converts types.Result to ScanResponse
+func ConvertToRPCScanResponse(results types.Results, fos *ftypes.OS) *scanner.ScanResponse {
 	var rpcResults []*scanner.Result
 	for _, result := range results {
 		rpcResults = append(rpcResults, &scanner.Result{
