@@ -1,7 +1,7 @@
 package s3
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckVersioningIsEnabled = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0090",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "s3",
 		ShortCode:  "enable-versioning",
 		Summary:    "S3 Data should be versioned",
@@ -24,6 +24,18 @@ With versioning you can recover more easily from both unintended user actions an
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableVersioningGoodExamples,
+			BadExamples:         terraformEnableVersioningBadExamples,
+			Links:               terraformEnableVersioningLinks,
+			RemediationMarkdown: terraformEnableVersioningRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableVersioningGoodExamples,
+			BadExamples:         cloudFormationEnableVersioningBadExamples,
+			Links:               cloudFormationEnableVersioningLinks,
+			RemediationMarkdown: cloudFormationEnableVersioningRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -31,7 +43,6 @@ With versioning you can recover more easily from both unintended user actions an
 			if !bucket.Versioning.Enabled.IsTrue() {
 				results.Add(
 					"Bucket does not have versioning enabled",
-					&bucket,
 					bucket.Versioning.Enabled,
 				)
 			} else {

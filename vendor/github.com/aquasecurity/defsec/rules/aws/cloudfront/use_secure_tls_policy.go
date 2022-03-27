@@ -1,8 +1,8 @@
 package cloudfront
 
 import (
-	"github.com/aquasecurity/defsec/provider"
-	"github.com/aquasecurity/defsec/provider/aws/cloudfront"
+	"github.com/aquasecurity/defsec/providers"
+	"github.com/aquasecurity/defsec/providers/aws/cloudfront"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -11,7 +11,7 @@ import (
 var CheckUseSecureTlsPolicy = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0013",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "cloudfront",
 		ShortCode:   "use-secure-tls-policy",
 		Summary:     "CloudFront distribution uses outdated SSL/TLS protocols.",
@@ -21,6 +21,18 @@ var CheckUseSecureTlsPolicy = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/secure-connections-supported-viewer-protocols-ciphers.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformUseSecureTlsPolicyGoodExamples,
+			BadExamples:         terraformUseSecureTlsPolicyBadExamples,
+			Links:               terraformUseSecureTlsPolicyLinks,
+			RemediationMarkdown: terraformUseSecureTlsPolicyRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationUseSecureTlsPolicyGoodExamples,
+			BadExamples:         cloudFormationUseSecureTlsPolicyBadExamples,
+			Links:               cloudFormationUseSecureTlsPolicyLinks,
+			RemediationMarkdown: cloudFormationUseSecureTlsPolicyRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -28,7 +40,6 @@ var CheckUseSecureTlsPolicy = rules.Register(
 			if dist.ViewerCertificate.MinimumProtocolVersion.NotEqualTo(cloudfront.ProtocolVersionTLS1_2) {
 				results.Add(
 					"Distribution allows unencrypted communications.",
-					&dist,
 					dist.ViewerCertificate.MinimumProtocolVersion,
 				)
 			} else {

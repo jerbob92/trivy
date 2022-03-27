@@ -1,7 +1,7 @@
 package iam
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckRequireLowercaseInPasswords = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0058",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "iam",
 		ShortCode:   "require-lowercase-in-passwords",
 		Summary:     "IAM Password policy should have requirement for at least one lowercase character.",
@@ -20,18 +20,23 @@ var CheckRequireLowercaseInPasswords = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html#password-policy-details",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformRequireLowercaseInPasswordsGoodExamples,
+			BadExamples:         terraformRequireLowercaseInPasswordsBadExamples,
+			Links:               terraformRequireLowercaseInPasswordsLinks,
+			RemediationMarkdown: terraformRequireLowercaseInPasswordsRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
 		policy := s.AWS.IAM.PasswordPolicy
-		if !policy.IsManaged() {
+		if policy.IsUnmanaged() {
 			return
 		}
 
 		if policy.RequireLowercase.IsFalse() {
 			results.Add(
 				"Password policy does not require lowercase characters.",
-				&policy,
 				policy.RequireLowercase,
 			)
 		} else {

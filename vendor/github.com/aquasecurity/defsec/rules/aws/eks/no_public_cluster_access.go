@@ -1,7 +1,7 @@
 package eks
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckNoPublicClusterAccess = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0040",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "eks",
 		ShortCode:   "no-public-cluster-access",
 		Summary:     "EKS Clusters should have the public access disabled",
@@ -20,6 +20,12 @@ var CheckNoPublicClusterAccess = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformNoPublicClusterAccessGoodExamples,
+			BadExamples:         terraformNoPublicClusterAccessBadExamples,
+			Links:               terraformNoPublicClusterAccessLinks,
+			RemediationMarkdown: terraformNoPublicClusterAccessRemediationMarkdown,
+		},
 		Severity: severity.Critical,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +33,6 @@ var CheckNoPublicClusterAccess = rules.Register(
 			if cluster.PublicAccessEnabled.IsTrue() {
 				results.Add(
 					"Public cluster access is enabled.",
-					&cluster,
 					cluster.PublicAccessEnabled,
 				)
 			} else {

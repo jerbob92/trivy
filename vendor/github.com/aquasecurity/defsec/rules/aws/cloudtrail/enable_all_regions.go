@@ -1,7 +1,7 @@
 package cloudtrail
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableAllRegions = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0014",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "cloudtrail",
 		ShortCode:   "enable-all-regions",
 		Summary:     "Cloudtrail should be enabled in all regions regardless of where your AWS resources are generally homed",
@@ -20,6 +20,18 @@ var CheckEnableAllRegions = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/awscloudtrail/latest/userguide/receive-cloudtrail-log-files-from-multiple-regions.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableAllRegionsGoodExamples,
+			BadExamples:         terraformEnableAllRegionsBadExamples,
+			Links:               terraformEnableAllRegionsLinks,
+			RemediationMarkdown: terraformEnableAllRegionsRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableAllRegionsGoodExamples,
+			BadExamples:         cloudFormationEnableAllRegionsBadExamples,
+			Links:               cloudFormationEnableAllRegionsLinks,
+			RemediationMarkdown: cloudFormationEnableAllRegionsRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableAllRegions = rules.Register(
 			if trail.IsMultiRegion.IsFalse() {
 				results.Add(
 					"Trail is not enabled across all regions.",
-					&trail,
 					trail.IsMultiRegion,
 				)
 			} else {

@@ -1,7 +1,7 @@
 package mq
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckNoPublicAccess = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0072",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "mq",
 		ShortCode:   "no-public-access",
 		Summary:     "Ensure MQ Broker is not publicly exposed",
@@ -20,6 +20,18 @@ var CheckNoPublicAccess = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/using-amazon-mq-securely.html#prefer-brokers-without-public-accessibility",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformNoPublicAccessGoodExamples,
+			BadExamples:         terraformNoPublicAccessBadExamples,
+			Links:               terraformNoPublicAccessLinks,
+			RemediationMarkdown: terraformNoPublicAccessRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationNoPublicAccessGoodExamples,
+			BadExamples:         cloudFormationNoPublicAccessBadExamples,
+			Links:               cloudFormationNoPublicAccessLinks,
+			RemediationMarkdown: cloudFormationNoPublicAccessRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckNoPublicAccess = rules.Register(
 			if broker.PublicAccess.IsTrue() {
 				results.Add(
 					"Broker has public access enabled.",
-					&broker,
 					broker.PublicAccess,
 				)
 			} else {

@@ -1,7 +1,7 @@
 package sns
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableTopicEncryption = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0095",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "sns",
 		ShortCode:   "enable-topic-encryption",
 		Summary:     "Unencrypted SNS topic.",
@@ -19,6 +19,18 @@ var CheckEnableTopicEncryption = rules.Register(
 		Explanation: `Queues should be encrypted with customer managed KMS keys and not default AWS managed keys, in order to allow granular control over access to specific queues.`,
 		Links: []string{
 			"https://docs.aws.amazon.com/sns/latest/dg/sns-server-side-encryption.html",
+		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableTopicEncryptionGoodExamples,
+			BadExamples:         terraformEnableTopicEncryptionBadExamples,
+			Links:               terraformEnableTopicEncryptionLinks,
+			RemediationMarkdown: terraformEnableTopicEncryptionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableTopicEncryptionGoodExamples,
+			BadExamples:         cloudFormationEnableTopicEncryptionBadExamples,
+			Links:               cloudFormationEnableTopicEncryptionLinks,
+			RemediationMarkdown: cloudFormationEnableTopicEncryptionRemediationMarkdown,
 		},
 		Severity: severity.High,
 	},
@@ -32,7 +44,6 @@ var CheckEnableTopicEncryption = rules.Register(
 			} else if topic.Encryption.KMSKeyID.EqualTo("alias/aws/sns") {
 				results.Add(
 					"Topic encryption does not use a customer managed key.",
-					&topic,
 					topic.Encryption.KMSKeyID,
 				)
 			} else {

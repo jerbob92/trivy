@@ -1,7 +1,7 @@
 package redshift
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckAddDescriptionToSecurityGroup = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0083",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "redshift",
 		ShortCode:  "add-description-to-security-group",
 		Summary:    "Missing description for security group/security group rule.",
@@ -22,6 +22,12 @@ Simplifies auditing, debugging, and managing security groups.`,
 		Links: []string{
 			"https://www.cloudconformity.com/knowledge-base/aws/EC2/security-group-rules-description.html",
 		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationAddDescriptionToSecurityGroupGoodExamples,
+			BadExamples:         cloudFormationAddDescriptionToSecurityGroupBadExamples,
+			Links:               cloudFormationAddDescriptionToSecurityGroupLinks,
+			RemediationMarkdown: cloudFormationAddDescriptionToSecurityGroupRemediationMarkdown,
+		},
 		Severity: severity.Low,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -29,7 +35,6 @@ Simplifies auditing, debugging, and managing security groups.`,
 			if group.Description.IsEmpty() {
 				results.Add(
 					"Security group has no description.",
-					&group,
 					group.Description,
 				)
 			} else {

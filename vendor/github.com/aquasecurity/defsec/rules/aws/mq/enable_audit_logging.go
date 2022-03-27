@@ -1,7 +1,7 @@
 package mq
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableAuditLogging = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0070",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "mq",
 		ShortCode:   "enable-audit-logging",
 		Summary:     "MQ Broker should have audit logging enabled",
@@ -20,6 +20,18 @@ var CheckEnableAuditLogging = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/configure-logging-monitoring-activemq.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableAuditLoggingGoodExamples,
+			BadExamples:         terraformEnableAuditLoggingBadExamples,
+			Links:               terraformEnableAuditLoggingLinks,
+			RemediationMarkdown: terraformEnableAuditLoggingRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableAuditLoggingGoodExamples,
+			BadExamples:         cloudFormationEnableAuditLoggingBadExamples,
+			Links:               cloudFormationEnableAuditLoggingLinks,
+			RemediationMarkdown: cloudFormationEnableAuditLoggingRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableAuditLogging = rules.Register(
 			if broker.Logging.Audit.IsFalse() {
 				results.Add(
 					"Broker does not have audit logging enabled.",
-					&broker,
 					broker.Logging.Audit,
 				)
 			} else {

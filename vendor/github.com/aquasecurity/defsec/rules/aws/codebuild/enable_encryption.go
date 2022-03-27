@@ -1,7 +1,7 @@
 package codebuild
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableEncryption = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0018",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "codebuild",
 		ShortCode:   "enable-encryption",
 		Summary:     "CodeBuild Project artifacts encryption should not be disabled",
@@ -21,6 +21,18 @@ var CheckEnableEncryption = rules.Register(
 			"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-codebuild-project-artifacts.html",
 			"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-codebuild-project.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableEncryptionGoodExamples,
+			BadExamples:         terraformEnableEncryptionBadExamples,
+			Links:               terraformEnableEncryptionLinks,
+			RemediationMarkdown: terraformEnableEncryptionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableEncryptionGoodExamples,
+			BadExamples:         cloudFormationEnableEncryptionBadExamples,
+			Links:               cloudFormationEnableEncryptionLinks,
+			RemediationMarkdown: cloudFormationEnableEncryptionRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -28,7 +40,6 @@ var CheckEnableEncryption = rules.Register(
 			if project.ArtifactSettings.EncryptionEnabled.IsFalse() {
 				results.Add(
 					"Encryption is not enabled for project artifacts.",
-					&project,
 					project.ArtifactSettings.EncryptionEnabled,
 				)
 			} else {
@@ -39,7 +50,6 @@ var CheckEnableEncryption = rules.Register(
 				if setting.EncryptionEnabled.IsFalse() {
 					results.Add(
 						"Encryption is not enabled for secondary project artifacts.",
-						&setting,
 						setting.EncryptionEnabled,
 					)
 				} else {

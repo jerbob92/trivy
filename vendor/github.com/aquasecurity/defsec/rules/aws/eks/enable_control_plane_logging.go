@@ -1,7 +1,7 @@
 package eks
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableControlPlaneLogging = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0038",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "eks",
 		ShortCode:   "enable-control-plane-logging",
 		Summary:     "EKS Clusters should have cluster control plane logging turned on",
@@ -20,6 +20,12 @@ var CheckEnableControlPlaneLogging = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableControlPlaneLoggingGoodExamples,
+			BadExamples:         terraformEnableControlPlaneLoggingBadExamples,
+			Links:               terraformEnableControlPlaneLoggingLinks,
+			RemediationMarkdown: terraformEnableControlPlaneLoggingRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +33,6 @@ var CheckEnableControlPlaneLogging = rules.Register(
 			if cluster.Logging.API.IsFalse() {
 				results.Add(
 					"Control plane API logging is not enabled.",
-					&cluster,
 					cluster.Logging.API,
 				)
 			} else {
@@ -37,7 +42,6 @@ var CheckEnableControlPlaneLogging = rules.Register(
 			if cluster.Logging.Audit.IsFalse() {
 				results.Add(
 					"Control plane audit logging is not enabled.",
-					&cluster,
 					cluster.Logging.Audit,
 				)
 			} else {
@@ -47,7 +51,6 @@ var CheckEnableControlPlaneLogging = rules.Register(
 			if cluster.Logging.Authenticator.IsFalse() {
 				results.Add(
 					"Control plane authenticator logging is not enabled.",
-					&cluster,
 					cluster.Logging.Authenticator,
 				)
 			} else {
@@ -57,7 +60,6 @@ var CheckEnableControlPlaneLogging = rules.Register(
 			if cluster.Logging.ControllerManager.IsFalse() {
 				results.Add(
 					"Control plane controller manager logging is not enabled.",
-					&cluster,
 					cluster.Logging.ControllerManager,
 				)
 			} else {
@@ -67,7 +69,6 @@ var CheckEnableControlPlaneLogging = rules.Register(
 			if cluster.Logging.Scheduler.IsFalse() {
 				results.Add(
 					"Control plane scheduler logging is not enabled.",
-					&cluster,
 					cluster.Logging.Scheduler,
 				)
 			} else {

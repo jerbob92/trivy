@@ -3,7 +3,7 @@ package ecr
 import (
 	"strings"
 
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -12,7 +12,7 @@ import (
 var CheckNoPublicAccess = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0032",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "ecr",
 		ShortCode:   "no-public-access",
 		Summary:     "ECR repository policy must block public access",
@@ -22,38 +22,64 @@ var CheckNoPublicAccess = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonECR/latest/public/public-repository-policies.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformNoPublicAccessGoodExamples,
+			BadExamples:         terraformNoPublicAccessBadExamples,
+			Links:               terraformNoPublicAccessLinks,
+			RemediationMarkdown: terraformNoPublicAccessRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationNoPublicAccessGoodExamples,
+			BadExamples:         cloudFormationNoPublicAccessBadExamples,
+			Links:               cloudFormationNoPublicAccessLinks,
+			RemediationMarkdown: cloudFormationNoPublicAccessRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, repo := range s.AWS.ECR.Repositories {
-			if !repo.IsManaged() {
+			if repo.IsUnmanaged() {
 				continue
 			}
-			for _, statement := range repo.Policy.Statements {
-				var hasECRAction bool
-				for _, action := range statement.Action {
-					if strings.HasPrefix(action, "ecr:") {
-						hasECRAction = true
-						break
+			for _, policyDocument := range repo.Policies {
+				policy := policyDocument.Document.Parsed
+				statements, _ := policy.Statements()
+				for _, statement := range statements {
+					var hasECRAction bool
+					actions, _ := statement.Actions()
+					for _, action := range actions {
+						if strings.HasPrefix(action, "ecr:") {
+							hasECRAction = true
+							break
+						}
 					}
-				}
-				if !hasECRAction {
-					continue
-				}
-				var foundIssue bool
-				for _, account := range statement.Principal.AWS {
-					if account == "*" {
+					if !hasECRAction {
+						continue
+					}
+					var foundIssue bool
+					principals, _ := statement.Principals()
+					if all, r := principals.All(); all {
 						foundIssue = true
 						results.Add(
 							"Policy provides public access to the ECR repository.",
-							&repo,
-							repo.Policy,
+							policyDocument.Document.MetadataFromIamGo(statement.Range(), r),
 						)
+					} else {
+						accounts, r := principals.AWS()
+						for _, account := range accounts {
+							if account == "*" {
+								foundIssue = true
+								results.Add(
+									"Policy provides public access to the ECR repository.",
+									policyDocument.Document.MetadataFromIamGo(statement.Range(), r),
+								)
+							}
+							continue
+						}
 					}
-					continue
-				}
-				if foundIssue {
-					results.AddPassed(&repo)
+					if foundIssue {
+						results.AddPassed(&repo)
+					}
 				}
 			}
 		}

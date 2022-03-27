@@ -1,7 +1,7 @@
 package elasticsearch
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnforceHttps = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0046",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "elastic-search",
 		ShortCode:  "enforce-https",
 		Summary:    "Elasticsearch doesn't enforce HTTPS traffic.",
@@ -22,14 +22,25 @@ You should use HTTPS, which is HTTP over an encrypted (TLS) connection, meaning 
 		Links: []string{
 			"https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-data-protection.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnforceHttpsGoodExamples,
+			BadExamples:         terraformEnforceHttpsBadExamples,
+			Links:               terraformEnforceHttpsLinks,
+			RemediationMarkdown: terraformEnforceHttpsRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnforceHttpsGoodExamples,
+			BadExamples:         cloudFormationEnforceHttpsBadExamples,
+			Links:               cloudFormationEnforceHttpsLinks,
+			RemediationMarkdown: cloudFormationEnforceHttpsRemediationMarkdown,
+		},
 		Severity: severity.Critical,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, domain := range s.AWS.Elasticsearch.Domains {
 			if domain.Endpoint.EnforceHTTPS.IsFalse() {
 				results.Add(
-					"Domain does not enfroce HTTPS.",
-					&domain,
+					"Domain does not enforce HTTPS.",
 					domain.Endpoint.EnforceHTTPS,
 				)
 			} else {

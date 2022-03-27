@@ -1,7 +1,7 @@
 package iam
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckSetMaxPasswordAge = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0062",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "iam",
 		ShortCode:  "set-max-password-age",
 		Summary:    "IAM Password policy should have expiry less than or equal to 90 days.",
@@ -22,18 +22,23 @@ The account password policy should be set to expire passwords after 90 days or l
 		Links: []string{
 			"https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html#password-policy-details",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformSetMaxPasswordAgeGoodExamples,
+			BadExamples:         terraformSetMaxPasswordAgeBadExamples,
+			Links:               terraformSetMaxPasswordAgeLinks,
+			RemediationMarkdown: terraformSetMaxPasswordAgeRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
 		policy := s.AWS.IAM.PasswordPolicy
-		if !policy.IsManaged() {
+		if policy.IsUnmanaged() {
 			return
 		}
 
 		if policy.MaxAgeDays.GreaterThan(90) {
 			results.Add(
 				"Password policy allows a maximum password age of greater than 90 days.",
-				&policy,
 				policy.MaxAgeDays,
 			)
 		} else {

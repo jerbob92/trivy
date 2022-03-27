@@ -1,7 +1,7 @@
 package cloudfront
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableLogging = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0010",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "cloudfront",
 		ShortCode:   "enable-logging",
 		Summary:     "Cloudfront distribution should have Access Logging configured",
@@ -20,6 +20,18 @@ var CheckEnableLogging = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableLoggingGoodExamples,
+			BadExamples:         terraformEnableLoggingBadExamples,
+			Links:               terraformEnableLoggingLinks,
+			RemediationMarkdown: terraformEnableLoggingRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableLoggingGoodExamples,
+			BadExamples:         cloudFormationEnableLoggingBadExamples,
+			Links:               cloudFormationEnableLoggingLinks,
+			RemediationMarkdown: cloudFormationEnableLoggingRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableLogging = rules.Register(
 			if dist.Logging.Bucket.IsEmpty() {
 				results.Add(
 					"Distribution does not have logging enabled.",
-					&dist,
 					dist.Logging.Bucket,
 				)
 			} else {

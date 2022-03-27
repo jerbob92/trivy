@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckAggregateAllRegions = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0019",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "config",
 		ShortCode:  "aggregate-all-regions",
 		Summary:    "Config configuration aggregator should be using all regions for source",
@@ -21,6 +21,18 @@ var CheckAggregateAllRegions = rules.Register(
 This will help limit the risk of any unmonitored configuration in regions that are thought to be unused.`,
 		Links: []string{
 			"https://docs.aws.amazon.com/config/latest/developerguide/aggregate-data.html",
+		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformAggregateAllRegionsGoodExamples,
+			BadExamples:         terraformAggregateAllRegionsBadExamples,
+			Links:               terraformAggregateAllRegionsLinks,
+			RemediationMarkdown: terraformAggregateAllRegionsRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationAggregateAllRegionsGoodExamples,
+			BadExamples:         cloudFormationAggregateAllRegionsBadExamples,
+			Links:               cloudFormationAggregateAllRegionsLinks,
+			RemediationMarkdown: cloudFormationAggregateAllRegionsRemediationMarkdown,
 		},
 		Severity: severity.High,
 	},

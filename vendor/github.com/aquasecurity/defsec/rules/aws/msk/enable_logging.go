@@ -1,7 +1,7 @@
 package msk
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableLogging = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0074",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "msk",
 		ShortCode:   "enable-logging",
 		Summary:     "Ensure MSK Cluster logging is enabled",
@@ -19,6 +19,18 @@ var CheckEnableLogging = rules.Register(
 		Explanation: `Managed streaming for Kafka can log to Cloud Watch, Kinesis Firehose and S3, at least one of these locations should be logged to`,
 		Links: []string{
 			"https://docs.aws.amazon.com/msk/latest/developerguide/msk-logging.html",
+		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableLoggingGoodExamples,
+			BadExamples:         terraformEnableLoggingBadExamples,
+			Links:               terraformEnableLoggingLinks,
+			RemediationMarkdown: terraformEnableLoggingRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableLoggingGoodExamples,
+			BadExamples:         cloudFormationEnableLoggingBadExamples,
+			Links:               cloudFormationEnableLoggingLinks,
+			RemediationMarkdown: cloudFormationEnableLoggingRemediationMarkdown,
 		},
 		Severity: severity.Medium,
 	},
@@ -43,7 +55,6 @@ var CheckEnableLogging = rules.Register(
 
 			results.Add(
 				"Cluster does not ship logs to any service.",
-				&cluster,
 				brokerLogging.Cloudwatch.Enabled,
 			)
 		}

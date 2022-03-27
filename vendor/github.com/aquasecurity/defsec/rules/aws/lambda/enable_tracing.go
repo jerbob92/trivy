@@ -1,8 +1,8 @@
 package lambda
 
 import (
-	"github.com/aquasecurity/defsec/provider"
-	"github.com/aquasecurity/defsec/provider/aws/lambda"
+	"github.com/aquasecurity/defsec/providers"
+	"github.com/aquasecurity/defsec/providers/aws/lambda"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -11,7 +11,7 @@ import (
 var CheckEnableTracing = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0066",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "lambda",
 		ShortCode:   "enable-tracing",
 		Summary:     "Lambda functions should have X-Ray tracing enabled",
@@ -21,14 +21,28 @@ var CheckEnableTracing = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/lambda/latest/dg/services-xray.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableTracingGoodExamples,
+			BadExamples:         terraformEnableTracingBadExamples,
+			Links:               terraformEnableTracingLinks,
+			RemediationMarkdown: terraformEnableTracingRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableTracingGoodExamples,
+			BadExamples:         cloudFormationEnableTracingBadExamples,
+			Links:               cloudFormationEnableTracingLinks,
+			RemediationMarkdown: cloudFormationEnableTracingRemediationMarkdown,
+		},
 		Severity: severity.Low,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, function := range s.AWS.Lambda.Functions {
+			if function.IsUnmanaged() {
+				continue
+			}
 			if function.Tracing.Mode.NotEqualTo(lambda.TracingModeActive) && function.Tracing.Mode.NotEqualTo(lambda.TracingModePassThrough) {
 				results.Add(
 					"Function does not have tracing enabled.",
-					&function,
 					function.Tracing.Mode,
 				)
 			} else {

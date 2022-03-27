@@ -1,8 +1,8 @@
 package athena
 
 import (
-	"github.com/aquasecurity/defsec/provider"
-	"github.com/aquasecurity/defsec/provider/aws/athena"
+	"github.com/aquasecurity/defsec/providers"
+	"github.com/aquasecurity/defsec/providers/aws/athena"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -11,7 +11,7 @@ import (
 var CheckEnableAtRestEncryption = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0006",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "athena",
 		ShortCode:   "enable-at-rest-encryption",
 		Summary:     "Athena databases and workgroup configurations are created unencrypted at rest by default, they should be encrypted",
@@ -21,17 +21,28 @@ var CheckEnableAtRestEncryption = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/athena/latest/ug/encryption.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableAtRestEncryptionGoodExamples,
+			BadExamples:         terraformEnableAtRestEncryptionBadExamples,
+			Links:               terraformEnableAtRestEncryptionLinks,
+			RemediationMarkdown: terraformEnableAtRestEncryptionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableAtRestEncryptionGoodExamples,
+			BadExamples:         cloudFormationEnableAtRestEncryptionBadExamples,
+			Links:               cloudFormationEnableAtRestEncryptionLinks,
+			RemediationMarkdown: cloudFormationEnableAtRestEncryptionRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, workgroup := range s.AWS.Athena.Workgroups {
-			if !workgroup.IsManaged() {
+			if workgroup.IsUnmanaged() {
 				continue
 			}
 			if workgroup.Encryption.Type.EqualTo(athena.EncryptionTypeNone) {
 				results.Add(
 					"Workgroup does not have encryption configured.",
-					&workgroup,
 					workgroup.Encryption.Type,
 				)
 			} else {
@@ -39,13 +50,12 @@ var CheckEnableAtRestEncryption = rules.Register(
 			}
 		}
 		for _, database := range s.AWS.Athena.Databases {
-			if !database.IsManaged() {
+			if database.IsUnmanaged() {
 				continue
 			}
 			if database.Encryption.Type.EqualTo(athena.EncryptionTypeNone) {
 				results.Add(
 					"Database does not have encryption configured.",
-					&database,
 					database.Encryption.Type,
 				)
 			} else {

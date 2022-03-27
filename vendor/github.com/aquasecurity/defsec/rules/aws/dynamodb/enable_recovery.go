@@ -1,7 +1,7 @@
 package dynamodb
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableRecovery = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0024",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "dynamodb",
 		ShortCode:  "enable-recovery",
 		Summary:    "Point in time recovery should be enabled to protect DynamoDB table",
@@ -22,11 +22,17 @@ By enabling point-in-time-recovery you can restore to a known point in the event
 		Links: []string{
 			"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/PointInTimeRecovery.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableRecoveryGoodExamples,
+			BadExamples:         terraformEnableRecoveryBadExamples,
+			Links:               terraformEnableRecoveryLinks,
+			RemediationMarkdown: terraformEnableRecoveryRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, cluster := range s.AWS.DynamoDB.DAXClusters {
-			if !cluster.IsManaged() {
+			if cluster.IsUnmanaged() {
 				continue
 			}
 			if cluster.PointInTimeRecovery.IsFalse() {

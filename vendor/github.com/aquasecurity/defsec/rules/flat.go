@@ -1,24 +1,25 @@
 package rules
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/severity"
 )
 
 type FlatResult struct {
-	RuleID          string            `json:"rule_id"`
-	RuleSummary     string            `json:"rule_description"`
-	RuleProvider    provider.Provider `json:"rule_provider"`
-	RuleService     string            `json:"rule_service"`
-	Impact          string            `json:"impact"`
-	Resolution      string            `json:"resolution"`
-	Links           []string          `json:"links"`
-	Description     string            `json:"description"`
-	RangeAnnotation string            `json:"-"`
-	Severity        severity.Severity `json:"severity"`
-	Status          Status            `json:"status"`
-	Resource        string            `json:"resource"`
-	Location        FlatRange         `json:"location"`
+	RuleID          string             `json:"rule_id"`
+	LongID          string             `json:"long_id"`
+	RuleSummary     string             `json:"rule_description"`
+	RuleProvider    providers.Provider `json:"rule_provider"`
+	RuleService     string             `json:"rule_service"`
+	Impact          string             `json:"impact"`
+	Resolution      string             `json:"resolution"`
+	Links           []string           `json:"links"`
+	Description     string             `json:"description"`
+	RangeAnnotation string             `json:"-"`
+	Severity        severity.Severity  `json:"severity"`
+	Status          Status             `json:"status"`
+	Resource        string             `json:"resource"`
+	Location        FlatRange          `json:"location"`
 }
 
 type FlatRange struct {
@@ -36,12 +37,22 @@ func (r Results) Flatten() []FlatResult {
 }
 
 func (r *Result) Flatten() FlatResult {
-	rng := r.CodeBlockMetadata().Range()
-	if r.IssueBlockMetadata() != nil {
-		rng = r.IssueBlockMetadata().Range()
+	rng := r.metadata.Range()
+
+	resMetadata := r.metadata
+
+	for resMetadata.Parent() != nil {
+		resMetadata = *resMetadata.Parent()
 	}
+
+	resource := ""
+	if resMetadata.Reference() != nil {
+		resource = resMetadata.Reference().LogicalID()
+	}
+
 	return FlatResult{
 		RuleID:          r.rule.AVDID,
+		LongID:          r.Rule().LongID(),
 		RuleSummary:     r.rule.Summary,
 		RuleProvider:    r.rule.Provider,
 		RuleService:     r.rule.Service,
@@ -52,7 +63,7 @@ func (r *Result) Flatten() FlatResult {
 		RangeAnnotation: r.Annotation(),
 		Severity:        r.rule.Severity,
 		Status:          r.status,
-		Resource:        r.CodeBlockMetadata().Reference().LogicalID(),
+		Resource:        resource,
 		Location: FlatRange{
 			Filename:  rng.GetFilename(),
 			StartLine: rng.GetStartLine(),

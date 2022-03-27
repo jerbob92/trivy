@@ -1,7 +1,7 @@
 package apigateway
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableAccessLogging = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0001",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "api-gateway",
 		ShortCode:   "enable-access-logging",
 		Summary:     "API Gateway stages for V1 and V2 should have access logging enabled",
@@ -20,21 +20,29 @@ var CheckEnableAccessLogging = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableAccessLoggingGoodExamples,
+			BadExamples:         terraformEnableAccessLoggingBadExamples,
+			Links:               terraformEnableAccessLoggingLinks,
+			RemediationMarkdown: terraformEnableAccessLoggingRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableAccessLoggingGoodExamples,
+			BadExamples:         cloudFormationEnableAccessLoggingBadExamples,
+			Links:               cloudFormationEnableAccessLoggingLinks,
+			RemediationMarkdown: cloudFormationEnableAccessLoggingRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, api := range s.AWS.APIGateway.APIs {
-			if !api.IsManaged() {
-				continue
-			}
 			for _, stage := range api.Stages {
-				if !stage.IsManaged() {
+				if stage.IsUnmanaged() {
 					continue
 				}
 				if stage.AccessLogging.CloudwatchLogGroupARN.IsEmpty() {
 					results.Add(
 						"Access logging is not configured.",
-						&stage,
 						stage.AccessLogging.CloudwatchLogGroupARN,
 					)
 				} else {

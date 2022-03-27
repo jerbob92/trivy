@@ -1,7 +1,7 @@
 package s3
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckPublicACLsAreIgnored = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0091",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "s3",
 		ShortCode:  "ignore-public-acls",
 		Summary:    "S3 Access Block should Ignore Public Acl",
@@ -22,6 +22,18 @@ S3 buckets should ignore public ACLs on buckets and any objects they contain. By
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformIgnorePublicAclsGoodExamples,
+			BadExamples:         terraformIgnorePublicAclsBadExamples,
+			Links:               terraformIgnorePublicAclsLinks,
+			RemediationMarkdown: terraformIgnorePublicAclsRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationIgnorePublicAclsGoodExamples,
+			BadExamples:         cloudFormationIgnorePublicAclsBadExamples,
+			Links:               cloudFormationIgnorePublicAclsLinks,
+			RemediationMarkdown: cloudFormationIgnorePublicAclsRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -31,7 +43,6 @@ S3 buckets should ignore public ACLs on buckets and any objects they contain. By
 			} else if bucket.PublicAccessBlock.IgnorePublicACLs.IsFalse() {
 				results.Add(
 					"Public access block does not ignore public ACLs",
-					&bucket,
 					bucket.PublicAccessBlock.IgnorePublicACLs,
 				)
 			} else {

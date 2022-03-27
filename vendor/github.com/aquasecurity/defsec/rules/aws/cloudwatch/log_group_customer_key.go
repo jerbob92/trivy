@@ -1,7 +1,7 @@
 package cloudwatch
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckLogGroupCustomerKey = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0017",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "cloudwatch",
 		ShortCode:   "log-group-customer-key",
 		Summary:     "CloudWatch log groups should be encrypted using CMK",
@@ -20,6 +20,18 @@ var CheckLogGroupCustomerKey = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformLogGroupCustomerKeyGoodExamples,
+			BadExamples:         terraformLogGroupCustomerKeyBadExamples,
+			Links:               terraformLogGroupCustomerKeyLinks,
+			RemediationMarkdown: terraformLogGroupCustomerKeyRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationLogGroupCustomerKeyGoodExamples,
+			BadExamples:         cloudFormationLogGroupCustomerKeyBadExamples,
+			Links:               cloudFormationLogGroupCustomerKeyLinks,
+			RemediationMarkdown: cloudFormationLogGroupCustomerKeyRemediationMarkdown,
+		},
 		Severity: severity.Low,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckLogGroupCustomerKey = rules.Register(
 			if group.KMSKeyID.IsEmpty() {
 				results.Add(
 					"Log group is not encrypted.",
-					&group,
 					group.KMSKeyID,
 				)
 			} else {

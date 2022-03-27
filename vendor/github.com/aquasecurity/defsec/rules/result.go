@@ -6,7 +6,7 @@ import (
 
 	"github.com/aquasecurity/defsec/severity"
 
-	"github.com/aquasecurity/defsec/types"
+	"github.com/aquasecurity/defsec/parsers/types"
 )
 
 type Status uint8
@@ -21,8 +21,7 @@ type Result struct {
 	description      string
 	annotation       string
 	status           Status
-	codeBlock        *types.Metadata
-	issueBlock       *types.Metadata
+	metadata         types.Metadata
 	severityOverride *severity.Severity
 }
 
@@ -41,8 +40,8 @@ func (r *Result) OverrideDescription(description string) {
 	r.description = description
 }
 
-func (r *Result) OverrideIssueBlockMetadata(metadata *types.Metadata) {
-	r.issueBlock = metadata
+func (r *Result) OverrideMetadata(metadata types.Metadata) {
+	r.metadata = metadata
 }
 
 func (r *Result) OverrideAnnotation(annotation string) {
@@ -65,59 +64,40 @@ func (r Result) Annotation() string {
 	return r.annotation
 }
 
-func (r Result) IssueBlockMetadata() *types.Metadata {
-	return r.issueBlock
+func (r Result) Metadata() types.Metadata {
+	return r.metadata
 }
 
-func (r Result) CodeBlockMetadata() *types.Metadata {
-	return r.codeBlock
-}
-
-func (r Result) NarrowestRange() types.Range {
-	if r.issueBlock != nil {
-		return r.issueBlock.Range()
-	}
-	return r.codeBlock.Range()
+func (r Result) Range() types.Range {
+	return r.metadata.Range()
 }
 
 type Results []Result
 
 type MetadataProvider interface {
-	GetMetadata() *types.Metadata
+	GetMetadata() types.Metadata
 	GetRawValue() interface{}
 }
 
-func (r *Results) Add(description string, source MetadataProvider, issueBlock ...MetadataProvider) {
-	var annotationStr string
-
+func (r *Results) Add(description string, source MetadataProvider) {
 	result := Result{
 		description: description,
-		codeBlock:   source.GetMetadata(),
 	}
-
-	if len(issueBlock) > 0 {
-		metadata := issueBlock[0].GetMetadata()
-		if metadata != nil && metadata.IsExplicit() {
-			annotationStr = rawToString(issueBlock[0].GetRawValue())
-
-		}
+	result.metadata = source.GetMetadata()
+	if result.metadata.IsExplicit() {
+		annotationStr := rawToString(source.GetRawValue())
 		result.annotation = annotationStr
-		result.issueBlock = issueBlock[0].GetMetadata()
 	}
-
 	*r = append(*r, result)
 }
 
 func (r *Results) AddPassed(source MetadataProvider, descriptions ...string) {
-	metadata := source.GetMetadata()
-
-	*r = append(*r,
-		Result{
-			description: strings.Join(descriptions, " "),
-			status:      StatusPassed,
-			codeBlock:   metadata,
-		},
-	)
+	res := Result{
+		description: strings.Join(descriptions, " "),
+		status:      StatusPassed,
+	}
+	res.metadata = source.GetMetadata()
+	*r = append(*r, res)
 }
 
 func (r *Results) SetRule(rule Rule) {

@@ -1,7 +1,7 @@
 package rds
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEncryptInstanceStorageData = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0080",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "rds",
 		ShortCode:  "encrypt-instance-storage-data",
 		Summary:    "RDS encryption has not been enabled at a DB Instance level.",
@@ -22,6 +22,18 @@ When enabling encryption by setting the kms_key_id.`,
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEncryptInstanceStorageDataGoodExamples,
+			BadExamples:         terraformEncryptInstanceStorageDataBadExamples,
+			Links:               terraformEncryptInstanceStorageDataLinks,
+			RemediationMarkdown: terraformEncryptInstanceStorageDataRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEncryptInstanceStorageDataGoodExamples,
+			BadExamples:         cloudFormationEncryptInstanceStorageDataBadExamples,
+			Links:               cloudFormationEncryptInstanceStorageDataLinks,
+			RemediationMarkdown: cloudFormationEncryptInstanceStorageDataRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -32,7 +44,6 @@ When enabling encryption by setting the kms_key_id.`,
 			if instance.Encryption.EncryptStorage.IsFalse() {
 				results.Add(
 					"Instance does not have storage encryption enabled.",
-					&instance,
 					instance.Encryption.EncryptStorage,
 				)
 			} else {

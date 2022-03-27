@@ -3,7 +3,7 @@ package ec2
 import (
 	"fmt"
 
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -15,7 +15,7 @@ var scanner = squealer.NewStringScanner()
 var CheckNoSecretsInUserData = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0029",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "ec2",
 		ShortCode:   "no-secrets-in-user-data",
 		Summary:     "User data for EC2 instances must not contain sensitive AWS keys",
@@ -25,11 +25,23 @@ var CheckNoSecretsInUserData = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-add-user-data.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformNoSecretsInUserDataGoodExamples,
+			BadExamples:         terraformNoSecretsInUserDataBadExamples,
+			Links:               terraformNoSecretsInUserDataLinks,
+			RemediationMarkdown: terraformNoSecretsInUserDataRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationNoSecretsInUserDataGoodExamples,
+			BadExamples:         cloudFormationNoSecretsInUserDataBadExamples,
+			Links:               cloudFormationNoSecretsInUserDataLinks,
+			RemediationMarkdown: cloudFormationNoSecretsInUserDataRemediationMarkdown,
+		},
 		Severity: severity.Critical,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, instance := range s.AWS.EC2.Instances {
-			if !instance.IsManaged() {
+			if instance.IsUnmanaged() {
 				continue
 			}
 			if result := scanner.Scan(instance.UserData.Value()); result.TransgressionFound {

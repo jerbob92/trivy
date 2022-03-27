@@ -1,7 +1,7 @@
 package ecr
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableImageScans = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0030",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "ecr",
 		ShortCode:   "enable-image-scans",
 		Summary:     "ECR repository has image scans disabled.",
@@ -20,6 +20,18 @@ var CheckEnableImageScans = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableImageScansGoodExamples,
+			BadExamples:         terraformEnableImageScansBadExamples,
+			Links:               terraformEnableImageScansLinks,
+			RemediationMarkdown: terraformEnableImageScansRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableImageScansGoodExamples,
+			BadExamples:         cloudFormationEnableImageScansBadExamples,
+			Links:               cloudFormationEnableImageScansLinks,
+			RemediationMarkdown: cloudFormationEnableImageScansRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableImageScans = rules.Register(
 			if repo.ImageScanning.ScanOnPush.IsFalse() {
 				results.Add(
 					"Image scanning is not enabled.",
-					&repo,
 					repo.ImageScanning.ScanOnPush,
 				)
 			} else {

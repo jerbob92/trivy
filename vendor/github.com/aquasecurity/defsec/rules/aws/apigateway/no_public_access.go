@@ -1,8 +1,8 @@
 package apigateway
 
 import (
-	"github.com/aquasecurity/defsec/provider"
-	"github.com/aquasecurity/defsec/provider/aws/apigateway"
+	"github.com/aquasecurity/defsec/providers"
+	"github.com/aquasecurity/defsec/providers/aws/apigateway"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,8 +10,8 @@ import (
 
 var CheckNoPublicAccess = rules.Register(
 	rules.Rule{
-		AVDID:       "",
-		Provider:    provider.AWSProvider,
+		AVDID:       "AVD-AWS-0004",
+		Provider:    providers.AWSProvider,
 		Service:     "api-gateway",
 		ShortCode:   "no-public-access",
 		Summary:     "No unauthorized access to API Gateway methods",
@@ -19,11 +19,17 @@ var CheckNoPublicAccess = rules.Register(
 		Resolution:  "Use and authorization method or require API Key",
 		Explanation: `API Gateway methods should generally be protected by authorization or api key. OPTION verb calls can be used without authorization`,
 		Links:       []string{},
-		Severity:    severity.Low,
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformNoPublicAccessGoodExamples,
+			BadExamples:         terraformNoPublicAccessBadExamples,
+			Links:               terraformNoPublicAccessLinks,
+			RemediationMarkdown: terraformNoPublicAccessRemediationMarkdown,
+		},
+		Severity: severity.Low,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, api := range s.AWS.APIGateway.APIs {
-			if !api.IsManaged() || api.ProtocolType.NotEqualTo(apigateway.ProtocolTypeREST) {
+			if api.IsUnmanaged() || api.ProtocolType.NotEqualTo(apigateway.ProtocolTypeREST) {
 				continue
 			}
 			for _, method := range api.RESTMethods {
@@ -36,7 +42,6 @@ var CheckNoPublicAccess = rules.Register(
 				if method.AuthorizationType.EqualTo(apigateway.AuthorizationNone) {
 					results.Add(
 						"Authorization is not enabled for this method.",
-						&method,
 						method.AuthorizationType,
 					)
 				} else {

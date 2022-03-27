@@ -1,7 +1,7 @@
 package s3
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckPublicACLsAreBlocked = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0086",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "s3",
 		ShortCode:  "block-public-acls",
 		Summary:    "S3 Access block should block public ACL",
@@ -22,6 +22,18 @@ S3 buckets should block public ACLs on buckets and any objects they contain. By 
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformBlockPublicAclsGoodExamples,
+			BadExamples:         terraformBlockPublicAclsBadExamples,
+			Links:               terraformBlockPublicAclsLinks,
+			RemediationMarkdown: terraformBlockPublicAclsRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationBlockPublicAclsGoodExamples,
+			BadExamples:         cloudFormationBlockPublicAclsBadExamples,
+			Links:               cloudFormationBlockPublicAclsLinks,
+			RemediationMarkdown: cloudFormationBlockPublicAclsRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -31,7 +43,6 @@ S3 buckets should block public ACLs on buckets and any objects they contain. By 
 			} else if bucket.PublicAccessBlock.BlockPublicACLs.IsFalse() {
 				results.Add(
 					"Public access block does not block public ACLs",
-					&bucket,
 					bucket.PublicAccessBlock.BlockPublicACLs,
 				)
 			} else {

@@ -1,7 +1,7 @@
 package autoscaling
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableAtRestEncryption = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0008",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "autoscaling",
 		ShortCode:   "enable-at-rest-encryption",
 		Summary:     "Launch configuration with unencrypted block device.",
@@ -20,6 +20,18 @@ var CheckEnableAtRestEncryption = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/RootDeviceStorage.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableAtRestEncryptionGoodExamples,
+			BadExamples:         terraformEnableAtRestEncryptionBadExamples,
+			Links:               terraformEnableAtRestEncryptionLinks,
+			RemediationMarkdown: terraformEnableAtRestEncryptionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableAtRestEncryptionGoodExamples,
+			BadExamples:         cloudFormationEnableAtRestEncryptionBadExamples,
+			Links:               cloudFormationEnableAtRestEncryptionLinks,
+			RemediationMarkdown: cloudFormationEnableAtRestEncryptionRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableAtRestEncryption = rules.Register(
 			if launchConfig.RootBlockDevice != nil && launchConfig.RootBlockDevice.Encrypted.IsFalse() {
 				results.Add(
 					"Root block device is not encrypted.",
-					&launchConfig,
 					launchConfig.RootBlockDevice.Encrypted,
 				)
 			} else {
@@ -37,7 +48,6 @@ var CheckEnableAtRestEncryption = rules.Register(
 				if device.Encrypted.IsFalse() {
 					results.Add(
 						"EBS block device is not encrypted.",
-						&device,
 						device.Encrypted,
 					)
 				} else {

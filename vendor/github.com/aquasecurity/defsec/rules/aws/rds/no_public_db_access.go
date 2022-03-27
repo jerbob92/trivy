@@ -1,7 +1,7 @@
 package rds
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckNoPublicDbAccess = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0082",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "rds",
 		ShortCode:   "no-public-db-access",
 		Summary:     "A database resource is marked as publicly accessible.",
@@ -20,6 +20,18 @@ var CheckNoPublicDbAccess = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html#USER_VPC.Hiding",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformNoPublicDbAccessGoodExamples,
+			BadExamples:         terraformNoPublicDbAccessBadExamples,
+			Links:               terraformNoPublicDbAccessLinks,
+			RemediationMarkdown: terraformNoPublicDbAccessRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationNoPublicDbAccessGoodExamples,
+			BadExamples:         cloudFormationNoPublicDbAccessBadExamples,
+			Links:               cloudFormationNoPublicDbAccessLinks,
+			RemediationMarkdown: cloudFormationNoPublicDbAccessRemediationMarkdown,
+		},
 		Severity: severity.Critical,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -28,7 +40,6 @@ var CheckNoPublicDbAccess = rules.Register(
 				if instance.PublicAccess.IsTrue() {
 					results.Add(
 						"Cluster instance is exposed publicly.",
-						&instance,
 						instance.PublicAccess,
 					)
 				} else {
@@ -40,7 +51,6 @@ var CheckNoPublicDbAccess = rules.Register(
 			if instance.PublicAccess.IsTrue() {
 				results.Add(
 					"Instance is exposed publicly.",
-					&instance,
 					instance.PublicAccess,
 				)
 			} else {

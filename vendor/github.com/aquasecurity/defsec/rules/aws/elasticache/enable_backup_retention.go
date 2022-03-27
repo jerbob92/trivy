@@ -1,7 +1,7 @@
 package elasticache
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableBackupRetention = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0050",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "elasticache",
 		ShortCode:   "enable-backup-retention",
 		Summary:     "Redis cluster should have backup retention turned on",
@@ -19,6 +19,18 @@ var CheckEnableBackupRetention = rules.Register(
 		Explanation: `Redis clusters should have a snapshot retention time to ensure that they are backed up and can be restored if required.`,
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-automatic.html",
+		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableBackupRetentionGoodExamples,
+			BadExamples:         terraformEnableBackupRetentionBadExamples,
+			Links:               terraformEnableBackupRetentionLinks,
+			RemediationMarkdown: terraformEnableBackupRetentionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableBackupRetentionGoodExamples,
+			BadExamples:         cloudFormationEnableBackupRetentionBadExamples,
+			Links:               cloudFormationEnableBackupRetentionLinks,
+			RemediationMarkdown: cloudFormationEnableBackupRetentionRemediationMarkdown,
 		},
 		Severity: severity.Medium,
 	},
@@ -35,7 +47,6 @@ var CheckEnableBackupRetention = rules.Register(
 			if cluster.SnapshotRetentionLimit.EqualTo(0) {
 				results.Add(
 					"Cluster snapshot retention is not enabled.",
-					&cluster,
 					cluster.SnapshotRetentionLimit,
 				)
 			} else {

@@ -1,7 +1,7 @@
 package elasticsearch
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableDomainLogging = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0042",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "elastic-search",
 		ShortCode:  "enable-domain-logging",
 		Summary:    "Domain logging should be enabled for Elastic Search domains",
@@ -26,6 +26,18 @@ All the logs are disabled by default.`,
 		Links: []string{
 			"https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-createdomain-configure-slow-logs.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableDomainLoggingGoodExamples,
+			BadExamples:         terraformEnableDomainLoggingBadExamples,
+			Links:               terraformEnableDomainLoggingLinks,
+			RemediationMarkdown: terraformEnableDomainLoggingRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableDomainLoggingGoodExamples,
+			BadExamples:         cloudFormationEnableDomainLoggingBadExamples,
+			Links:               cloudFormationEnableDomainLoggingLinks,
+			RemediationMarkdown: cloudFormationEnableDomainLoggingRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -33,7 +45,6 @@ All the logs are disabled by default.`,
 			if domain.LogPublishing.AuditEnabled.IsFalse() {
 				results.Add(
 					"Domain audit logging is not enabled.",
-					&domain,
 					domain.LogPublishing.AuditEnabled,
 				)
 			} else {

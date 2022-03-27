@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/aquasecurity/defsec/cidr"
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -13,7 +13,7 @@ import (
 var CheckNoPublicClusterAccessToCidr = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0041",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "eks",
 		ShortCode:   "no-public-cluster-access-to-cidr",
 		Summary:     "EKS cluster should not have open CIDR range for public access",
@@ -23,10 +23,19 @@ var CheckNoPublicClusterAccessToCidr = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/eks/latest/userguide/create-public-private-vpc.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformNoPublicClusterAccessToCidrGoodExamples,
+			BadExamples:         terraformNoPublicClusterAccessToCidrBadExamples,
+			Links:               terraformNoPublicClusterAccessToCidrLinks,
+			RemediationMarkdown: terraformNoPublicClusterAccessToCidrRemediationMarkdown,
+		},
 		Severity: severity.Critical,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, cluster := range s.AWS.EKS.Clusters {
+			if cluster.PublicAccessEnabled.IsFalse() {
+				continue
+			}
 			for _, accessCidr := range cluster.PublicAccessCIDRs {
 				if cidr.IsPublic(accessCidr.Value()) {
 					results.Add(

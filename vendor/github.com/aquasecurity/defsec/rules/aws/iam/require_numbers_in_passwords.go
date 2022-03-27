@@ -1,7 +1,7 @@
 package iam
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckRequireNumbersInPasswords = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0059",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "iam",
 		ShortCode:   "require-numbers-in-passwords",
 		Summary:     "IAM Password policy should have requirement for at least one number in the password.",
@@ -20,18 +20,23 @@ var CheckRequireNumbersInPasswords = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_passwords_account-policy.html#password-policy-details",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformRequireNumbersInPasswordsGoodExamples,
+			BadExamples:         terraformRequireNumbersInPasswordsBadExamples,
+			Links:               terraformRequireNumbersInPasswordsLinks,
+			RemediationMarkdown: terraformRequireNumbersInPasswordsRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
 		policy := s.AWS.IAM.PasswordPolicy
-		if !policy.IsManaged() {
+		if policy.IsUnmanaged() {
 			return
 		}
 
 		if policy.RequireNumbers.IsFalse() {
 			results.Add(
 				"Password policy does not require numbers.",
-				&policy,
 				policy.RequireNumbers,
 			)
 		} else {

@@ -1,8 +1,8 @@
 package msk
 
 import (
-	"github.com/aquasecurity/defsec/provider"
-	"github.com/aquasecurity/defsec/provider/aws/msk"
+	"github.com/aquasecurity/defsec/providers"
+	"github.com/aquasecurity/defsec/providers/aws/msk"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -11,7 +11,7 @@ import (
 var CheckEnableInTransitEncryption = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0073",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "msk",
 		ShortCode:   "enable-in-transit-encryption",
 		Summary:     "A MSK cluster allows unencrypted data in transit.",
@@ -21,6 +21,18 @@ var CheckEnableInTransitEncryption = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/msk/latest/developerguide/msk-encryption.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableInTransitEncryptionGoodExamples,
+			BadExamples:         terraformEnableInTransitEncryptionBadExamples,
+			Links:               terraformEnableInTransitEncryptionLinks,
+			RemediationMarkdown: terraformEnableInTransitEncryptionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableInTransitEncryptionGoodExamples,
+			BadExamples:         cloudFormationEnableInTransitEncryptionBadExamples,
+			Links:               cloudFormationEnableInTransitEncryptionLinks,
+			RemediationMarkdown: cloudFormationEnableInTransitEncryptionRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -28,13 +40,11 @@ var CheckEnableInTransitEncryption = rules.Register(
 			if cluster.EncryptionInTransit.ClientBroker.EqualTo(msk.ClientBrokerEncryptionPlaintext) {
 				results.Add(
 					"Cluster allows plaintext communication.",
-					&cluster,
 					cluster.EncryptionInTransit.ClientBroker,
 				)
 			} else if cluster.EncryptionInTransit.ClientBroker.EqualTo(msk.ClientBrokerEncryptionTLSOrPlaintext) {
 				results.Add(
 					"Cluster allows plaintext communication.",
-					&cluster,
 					cluster.EncryptionInTransit.ClientBroker,
 				)
 			} else {

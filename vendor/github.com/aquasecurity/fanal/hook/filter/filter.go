@@ -42,7 +42,12 @@ func (h systemFileFilterHook) Hook(blob *types.BlobInfo) error {
 	var systemFiles []string
 	for _, file := range append(blob.SystemFiles, defaultSystemFiles...) {
 		// Trim leading slashes to be the same format as the path in container images.
-		systemFiles = append(systemFiles, strings.TrimPrefix(file, "/"))
+		systemFile := strings.TrimPrefix(file, "/")
+		// We should check the root filepath ("/") and ignore it.
+		// Otherwise libraries with an empty filePath will be removed.
+		if systemFile != "" {
+			systemFiles = append(systemFiles, systemFile)
+		}
 	}
 
 	var apps []types.Application
@@ -67,6 +72,17 @@ func (h systemFileFilterHook) Hook(blob *types.BlobInfo) error {
 		app.Libraries = pkgs
 		apps = append(apps, app)
 	}
+
+	// Iterate and delete unnecessary customResource
+	i := 0
+	for _, res := range blob.CustomResources {
+		if utils.StringInSlice(res.FilePath, systemFiles) {
+			continue
+		}
+		blob.CustomResources[i] = res
+		i++
+	}
+	blob.CustomResources = blob.CustomResources[:i]
 
 	// Overwrite Applications
 	blob.Applications = apps

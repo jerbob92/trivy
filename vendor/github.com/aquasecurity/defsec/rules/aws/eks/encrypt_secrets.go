@@ -1,7 +1,7 @@
 package eks
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEncryptSecrets = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0039",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "eks",
 		ShortCode:   "encrypt-secrets",
 		Summary:     "EKS should have the encryption of secrets enabled",
@@ -20,6 +20,18 @@ var CheckEncryptSecrets = rules.Register(
 		Links: []string{
 			"https://aws.amazon.com/about-aws/whats-new/2020/03/amazon-eks-adds-envelope-encryption-for-secrets-with-aws-kms/",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEncryptSecretsGoodExamples,
+			BadExamples:         terraformEncryptSecretsBadExamples,
+			Links:               terraformEncryptSecretsLinks,
+			RemediationMarkdown: terraformEncryptSecretsRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEncryptSecretsGoodExamples,
+			BadExamples:         cloudFormationEncryptSecretsBadExamples,
+			Links:               cloudFormationEncryptSecretsLinks,
+			RemediationMarkdown: cloudFormationEncryptSecretsRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,13 +39,11 @@ var CheckEncryptSecrets = rules.Register(
 			if cluster.Encryption.Secrets.IsFalse() {
 				results.Add(
 					"Cluster does not have secret encryption enabled.",
-					&cluster,
 					cluster.Encryption.Secrets,
 				)
 			} else if cluster.Encryption.KMSKeyID.IsEmpty() {
 				results.Add(
 					"Cluster encryption requires a KMS key ID, which is missing",
-					&cluster,
 					cluster.Encryption.KMSKeyID,
 				)
 			} else {

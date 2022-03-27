@@ -1,7 +1,7 @@
 package lambda
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckRestrictSourceArn = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0067",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "lambda",
 		ShortCode:  "restrict-source-arn",
 		Summary:    "Ensure that lambda function permission has a source arn specified",
@@ -24,6 +24,18 @@ For S3, this should be the ARN of the S3 Bucket. For CloudWatch Events, this sho
 		Links: []string{
 			"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-permission.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformRestrictSourceArnGoodExamples,
+			BadExamples:         terraformRestrictSourceArnBadExamples,
+			Links:               terraformRestrictSourceArnLinks,
+			RemediationMarkdown: terraformRestrictSourceArnRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationRestrictSourceArnGoodExamples,
+			BadExamples:         cloudFormationRestrictSourceArnBadExamples,
+			Links:               cloudFormationRestrictSourceArnLinks,
+			RemediationMarkdown: cloudFormationRestrictSourceArnRemediationMarkdown,
+		},
 		Severity: severity.Critical,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -35,7 +47,6 @@ For S3, this should be the ARN of the S3 Bucket. For CloudWatch Events, this sho
 				if permission.SourceARN.IsEmpty() {
 					results.Add(
 						"Lambda permission lacks source ARN for *.amazonaws.com principal.",
-						&function,
 						permission.SourceARN,
 					)
 				} else {

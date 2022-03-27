@@ -1,7 +1,7 @@
 package redshift
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEncryptionCustomerKey = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0084",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "redshift",
 		ShortCode:   "encryption-customer-key",
 		Summary:     "Redshift clusters should use at rest encryption",
@@ -20,6 +20,18 @@ var CheckEncryptionCustomerKey = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-db-encryption.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEncryptionCustomerKeyGoodExamples,
+			BadExamples:         terraformEncryptionCustomerKeyBadExamples,
+			Links:               terraformEncryptionCustomerKeyLinks,
+			RemediationMarkdown: terraformEncryptionCustomerKeyRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEncryptionCustomerKeyGoodExamples,
+			BadExamples:         cloudFormationEncryptionCustomerKeyBadExamples,
+			Links:               cloudFormationEncryptionCustomerKeyLinks,
+			RemediationMarkdown: cloudFormationEncryptionCustomerKeyRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,13 +39,11 @@ var CheckEncryptionCustomerKey = rules.Register(
 			if cluster.Encryption.Enabled.IsFalse() {
 				results.Add(
 					"Cluster does not have encryption enabled.",
-					&cluster,
 					cluster.Encryption.Enabled,
 				)
 			} else if cluster.Encryption.KMSKeyID.IsEmpty() {
 				results.Add(
 					"Cluster does not use a customer managed encryption key.",
-					&cluster,
 					cluster.Encryption.KMSKeyID,
 				)
 			} else {

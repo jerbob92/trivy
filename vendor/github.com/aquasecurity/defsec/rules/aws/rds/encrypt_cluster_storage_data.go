@@ -1,7 +1,7 @@
 package rds
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEncryptClusterStorageData = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0079",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "rds",
 		ShortCode:  "encrypt-cluster-storage-data",
 		Summary:    "There is no encryption specified or encryption is disabled on the RDS Cluster.",
@@ -22,23 +22,33 @@ When enabling encryption by setting the kms_key_id, the storage_encrypted must a
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEncryptClusterStorageDataGoodExamples,
+			BadExamples:         terraformEncryptClusterStorageDataBadExamples,
+			Links:               terraformEncryptClusterStorageDataLinks,
+			RemediationMarkdown: terraformEncryptClusterStorageDataRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEncryptClusterStorageDataGoodExamples,
+			BadExamples:         cloudFormationEncryptClusterStorageDataBadExamples,
+			Links:               cloudFormationEncryptClusterStorageDataLinks,
+			RemediationMarkdown: cloudFormationEncryptClusterStorageDataRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
 		for _, cluster := range s.AWS.RDS.Clusters {
-			if !cluster.IsManaged() {
+			if cluster.IsUnmanaged() {
 				continue
 			}
 			if cluster.Encryption.EncryptStorage.IsFalse() {
 				results.Add(
 					"Cluster does not have storage encryption enabled.",
-					&cluster,
 					cluster.Encryption.EncryptStorage,
 				)
 			} else if cluster.Encryption.KMSKeyID.IsEmpty() {
 				results.Add(
 					"Cluster does not specify a customer managed key for storage encryption.",
-					&cluster,
 					cluster.Encryption.KMSKeyID,
 				)
 			} else {

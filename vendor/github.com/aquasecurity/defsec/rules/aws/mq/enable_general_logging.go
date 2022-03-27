@@ -1,7 +1,7 @@
 package mq
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableGeneralLogging = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0071",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "mq",
 		ShortCode:   "enable-general-logging",
 		Summary:     "MQ Broker should have general logging enabled",
@@ -20,6 +20,18 @@ var CheckEnableGeneralLogging = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/amazon-mq/latest/developer-guide/configure-logging-monitoring-activemq.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableGeneralLoggingGoodExamples,
+			BadExamples:         terraformEnableGeneralLoggingBadExamples,
+			Links:               terraformEnableGeneralLoggingLinks,
+			RemediationMarkdown: terraformEnableGeneralLoggingRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableGeneralLoggingGoodExamples,
+			BadExamples:         cloudFormationEnableGeneralLoggingBadExamples,
+			Links:               cloudFormationEnableGeneralLoggingLinks,
+			RemediationMarkdown: cloudFormationEnableGeneralLoggingRemediationMarkdown,
+		},
 		Severity: severity.Low,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableGeneralLogging = rules.Register(
 			if broker.Logging.General.IsFalse() {
 				results.Add(
 					"Broker does not have general logging enabled.",
-					&broker,
 					broker.Logging.General,
 				)
 			} else {

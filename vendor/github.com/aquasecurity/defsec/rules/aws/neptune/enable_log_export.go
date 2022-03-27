@@ -1,7 +1,7 @@
 package neptune
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableLogExport = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0075",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "neptune",
 		ShortCode:   "enable-log-export",
 		Summary:     "Neptune logs export should be enabled",
@@ -20,6 +20,18 @@ var CheckEnableLogExport = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/neptune/latest/userguide/auditing.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableLogExportGoodExamples,
+			BadExamples:         terraformEnableLogExportBadExamples,
+			Links:               terraformEnableLogExportLinks,
+			RemediationMarkdown: terraformEnableLogExportRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableLogExportGoodExamples,
+			BadExamples:         cloudFormationEnableLogExportBadExamples,
+			Links:               cloudFormationEnableLogExportLinks,
+			RemediationMarkdown: cloudFormationEnableLogExportRemediationMarkdown,
+		},
 		Severity: severity.Medium,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableLogExport = rules.Register(
 			if cluster.Logging.Audit.IsFalse() {
 				results.Add(
 					"Cluster does not have audit logging enabled.",
-					&cluster,
 					cluster.Logging.Audit,
 				)
 			} else {

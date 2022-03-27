@@ -1,7 +1,7 @@
 package workspaces
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableDiskEncryption = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0109",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "workspaces",
 		ShortCode:   "enable-disk-encryption",
 		Summary:     "Root and user volumes on Workspaces should be encrypted",
@@ -20,6 +20,18 @@ var CheckEnableDiskEncryption = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/workspaces/latest/adminguide/encrypt-workspaces.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableDiskEncryptionGoodExamples,
+			BadExamples:         terraformEnableDiskEncryptionBadExamples,
+			Links:               terraformEnableDiskEncryptionLinks,
+			RemediationMarkdown: terraformEnableDiskEncryptionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableDiskEncryptionGoodExamples,
+			BadExamples:         cloudFormationEnableDiskEncryptionBadExamples,
+			Links:               cloudFormationEnableDiskEncryptionLinks,
+			RemediationMarkdown: cloudFormationEnableDiskEncryptionRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -28,7 +40,6 @@ var CheckEnableDiskEncryption = rules.Register(
 			if workspace.RootVolume.Encryption.Enabled.IsFalse() {
 				results.Add(
 					"Root volume does not have encryption enabled.",
-					&workspace,
 					workspace.RootVolume.Encryption.Enabled,
 				)
 				fail = true
@@ -36,7 +47,6 @@ var CheckEnableDiskEncryption = rules.Register(
 			if workspace.UserVolume.Encryption.Enabled.IsFalse() {
 				results.Add(
 					"User volume does not have encryption enabled.",
-					&workspace,
 					workspace.UserVolume.Encryption.Enabled,
 				)
 				fail = true

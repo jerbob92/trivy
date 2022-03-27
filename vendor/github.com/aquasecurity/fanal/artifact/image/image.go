@@ -120,6 +120,10 @@ func (a Artifact) Inspect(ctx context.Context) (types.ArtifactReference, error) 
 	}, nil
 }
 
+func (Artifact) Clean(_ types.ArtifactReference) error {
+	return nil
+}
+
 func (a Artifact) calcCacheKeys(imageID string, diffIDs []string) (string, []string, map[string]string, error) {
 	// Pass an empty config scanner option so that the cache key can be the same, even when policies are updated.
 	imageKey, err := cache.CalcKey(imageID, a.analyzer.ImageConfigAnalyzerVersions(), nil, artifact.Option{}, config.ScannerOption{})
@@ -216,15 +220,16 @@ func (a Artifact) inspectLayer(ctx context.Context, diffID string) (types.BlobIn
 	result.Sort()
 
 	blobInfo := types.BlobInfo{
-		SchemaVersion: types.BlobJSONSchemaVersion,
-		Digest:        layerDigest,
-		DiffID:        diffID,
-		OS:            result.OS,
-		PackageInfos:  result.PackageInfos,
-		Applications:  result.Applications,
-		SystemFiles:   result.SystemInstalledFiles,
-		OpaqueDirs:    opqDirs,
-		WhiteoutFiles: whFiles,
+		SchemaVersion:   types.BlobJSONSchemaVersion,
+		Digest:          layerDigest,
+		DiffID:          diffID,
+		OS:              result.OS,
+		PackageInfos:    result.PackageInfos,
+		Applications:    result.Applications,
+		SystemFiles:     result.SystemInstalledFiles,
+		OpaqueDirs:      opqDirs,
+		WhiteoutFiles:   whFiles,
+		CustomResources: result.CustomResources,
 
 		// For Red Hat
 		BuildInfo: result.BuildInfo,

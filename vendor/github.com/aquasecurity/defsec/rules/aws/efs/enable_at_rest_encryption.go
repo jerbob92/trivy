@@ -1,7 +1,7 @@
 package efs
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableAtRestEncryption = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0037",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "efs",
 		ShortCode:   "enable-at-rest-encryption",
 		Summary:     "EFS Encryption has not been enabled",
@@ -20,6 +20,18 @@ var CheckEnableAtRestEncryption = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/efs/latest/ug/encryption.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableAtRestEncryptionGoodExamples,
+			BadExamples:         terraformEnableAtRestEncryptionBadExamples,
+			Links:               terraformEnableAtRestEncryptionLinks,
+			RemediationMarkdown: terraformEnableAtRestEncryptionRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableAtRestEncryptionGoodExamples,
+			BadExamples:         cloudFormationEnableAtRestEncryptionBadExamples,
+			Links:               cloudFormationEnableAtRestEncryptionLinks,
+			RemediationMarkdown: cloudFormationEnableAtRestEncryptionRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableAtRestEncryption = rules.Register(
 			if fs.Encrypted.IsFalse() {
 				results.Add(
 					"File system is not encrypted.",
-					&fs,
 					fs.Encrypted,
 				)
 			} else {

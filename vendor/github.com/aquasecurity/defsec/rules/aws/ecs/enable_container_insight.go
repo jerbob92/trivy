@@ -1,7 +1,7 @@
 package ecs
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnableContainerInsight = rules.Register(
 	rules.Rule{
 		AVDID:       "AVD-AWS-0034",
-		Provider:    provider.AWSProvider,
+		Provider:    providers.AWSProvider,
 		Service:     "ecs",
 		ShortCode:   "enable-container-insight",
 		Summary:     "ECS clusters should have container insights enabled",
@@ -20,6 +20,18 @@ var CheckEnableContainerInsight = rules.Register(
 		Links: []string{
 			"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights.html",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnableContainerInsightGoodExamples,
+			BadExamples:         terraformEnableContainerInsightBadExamples,
+			Links:               terraformEnableContainerInsightLinks,
+			RemediationMarkdown: terraformEnableContainerInsightRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnableContainerInsightGoodExamples,
+			BadExamples:         cloudFormationEnableContainerInsightBadExamples,
+			Links:               cloudFormationEnableContainerInsightLinks,
+			RemediationMarkdown: cloudFormationEnableContainerInsightRemediationMarkdown,
+		},
 		Severity: severity.Low,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -27,7 +39,6 @@ var CheckEnableContainerInsight = rules.Register(
 			if cluster.Settings.ContainerInsightsEnabled.IsFalse() {
 				results.Add(
 					"Cluster does not have container insights enabled.",
-					&cluster,
 					cluster.Settings.ContainerInsightsEnabled,
 				)
 			} else {

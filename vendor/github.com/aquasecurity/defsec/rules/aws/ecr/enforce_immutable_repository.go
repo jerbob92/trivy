@@ -1,7 +1,7 @@
 package ecr
 
 import (
-	"github.com/aquasecurity/defsec/provider"
+	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/rules"
 	"github.com/aquasecurity/defsec/severity"
 	"github.com/aquasecurity/defsec/state"
@@ -10,7 +10,7 @@ import (
 var CheckEnforceImmutableRepository = rules.Register(
 	rules.Rule{
 		AVDID:      "AVD-AWS-0031",
-		Provider:   provider.AWSProvider,
+		Provider:   providers.AWSProvider,
 		Service:    "ecr",
 		ShortCode:  "enforce-immutable-repository",
 		Summary:    "ECR images tags shouldn't be mutable.",
@@ -22,6 +22,18 @@ This can be done by setting <code>image_tab_mutability</code> to <code>IMMUTABLE
 		Links: []string{
 			"https://sysdig.com/blog/toctou-tag-mutability/",
 		},
+		Terraform: &rules.EngineMetadata{
+			GoodExamples:        terraformEnforceImmutableRepositoryGoodExamples,
+			BadExamples:         terraformEnforceImmutableRepositoryBadExamples,
+			Links:               terraformEnforceImmutableRepositoryLinks,
+			RemediationMarkdown: terraformEnforceImmutableRepositoryRemediationMarkdown,
+		},
+		CloudFormation: &rules.EngineMetadata{
+			GoodExamples:        cloudFormationEnforceImmutableRepositoryGoodExamples,
+			BadExamples:         cloudFormationEnforceImmutableRepositoryBadExamples,
+			Links:               cloudFormationEnforceImmutableRepositoryLinks,
+			RemediationMarkdown: cloudFormationEnforceImmutableRepositoryRemediationMarkdown,
+		},
 		Severity: severity.High,
 	},
 	func(s *state.State) (results rules.Results) {
@@ -29,7 +41,6 @@ This can be done by setting <code>image_tab_mutability</code> to <code>IMMUTABLE
 			if repo.ImageTagsImmutable.IsFalse() {
 				results.Add(
 					"Repository tags are mutable.",
-					&repo,
 					repo.ImageTagsImmutable,
 				)
 			} else {
