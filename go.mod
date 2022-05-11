@@ -199,7 +199,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/aquasecurity/fanal => github.com/jerbob92/fanal v0.0.1-rc4
+replace github.com/aquasecurity/fanal => github.com/jerbob92/fanal v0.0.1-rc5
 
 // To resolve CVE-2022-23648
 replace github.com/containerd/containerd v1.5.9 => github.com/containerd/containerd v1.5.10
