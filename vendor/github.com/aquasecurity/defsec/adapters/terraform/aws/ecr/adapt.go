@@ -64,6 +64,7 @@ func adaptRepository(resource *terraform.Block, module *terraform.Module) ecr.Re
 
 			policy := iamp.Policy{
 				Metadata: policyRes.GetMetadata(),
+				Name:     types.StringDefault("", policyRes.GetMetadata()),
 				Document: iamp.Document{
 					Parsed:   *parsed,
 					Metadata: policyAttr.GetMetadata(),
@@ -81,6 +82,11 @@ func adaptRepository(resource *terraform.Block, module *terraform.Module) ecr.Re
 
 		kmsKeyAttr := encryptBlock.GetAttribute("kms_key")
 		repo.Encryption.KMSKeyID = kmsKeyAttr.AsStringValueOrDefault("", encryptBlock)
+		if kmsKeyAttr.IsResourceBlockReference("aws_kms_key") {
+			if keyBlock, err := module.GetReferencedBlock(kmsKeyAttr, encryptBlock); err == nil {
+				repo.Encryption.KMSKeyID = types.String(keyBlock.FullName(), keyBlock.GetMetadata())
+			}
+		}
 	}
 
 	return repo

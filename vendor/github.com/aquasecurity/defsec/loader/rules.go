@@ -1,6 +1,7 @@
 package loader
 
 import (
+	_ "github.com/aquasecurity/defsec/rego"
 	_ "github.com/aquasecurity/defsec/rules/aws/apigateway"
 	_ "github.com/aquasecurity/defsec/rules/aws/athena"
 	_ "github.com/aquasecurity/defsec/rules/aws/autoscaling"
@@ -52,7 +53,6 @@ import (
 	_ "github.com/aquasecurity/defsec/rules/cloudstack/compute"
 	_ "github.com/aquasecurity/defsec/rules/digitalocean/compute"
 	_ "github.com/aquasecurity/defsec/rules/digitalocean/spaces"
-	_ "github.com/aquasecurity/defsec/rules/general/secrets"
 	_ "github.com/aquasecurity/defsec/rules/github/actions"
 	_ "github.com/aquasecurity/defsec/rules/github/repositories"
 	_ "github.com/aquasecurity/defsec/rules/google/bigquery"

@@ -3,8 +3,10 @@ package keyvault
 import (
 	"time"
 
-	"github.com/aquasecurity/defsec/parsers/terraform"
 	"github.com/aquasecurity/defsec/parsers/types"
+
+	"github.com/aquasecurity/defsec/parsers/terraform"
+
 	"github.com/aquasecurity/defsec/providers/azure/keyvault"
 )
 
@@ -38,7 +40,15 @@ func (a *adapter) adaptVaults(modules terraform.Modules) []keyvault.Vault {
 
 	if len(orphanResources) > 0 {
 		orphanage := keyvault.Vault{
-			Metadata: types.NewUnmanagedMetadata(),
+			Metadata:                types.NewUnmanagedMetadata(),
+			Secrets:                 nil,
+			Keys:                    nil,
+			EnablePurgeProtection:   types.BoolDefault(false, types.NewUnmanagedMetadata()),
+			SoftDeleteRetentionDays: types.IntDefault(0, types.NewUnmanagedMetadata()),
+			NetworkACLs: keyvault.NetworkACLs{
+				Metadata:      types.NewUnmanagedMetadata(),
+				DefaultAction: types.StringDefault("", types.NewUnmanagedMetadata()),
+			},
 		}
 		for _, secretResource := range orphanResources {
 			orphanage.Secrets = append(orphanage.Secrets, adaptSecret(secretResource))
@@ -50,7 +60,15 @@ func (a *adapter) adaptVaults(modules terraform.Modules) []keyvault.Vault {
 
 	if len(orphanResources) > 0 {
 		orphanage := keyvault.Vault{
-			Metadata: types.NewUnmanagedMetadata(),
+			Metadata:                types.NewUnmanagedMetadata(),
+			Secrets:                 nil,
+			Keys:                    nil,
+			EnablePurgeProtection:   types.BoolDefault(false, types.NewUnmanagedMetadata()),
+			SoftDeleteRetentionDays: types.IntDefault(0, types.NewUnmanagedMetadata()),
+			NetworkACLs: keyvault.NetworkACLs{
+				Metadata:      types.NewUnmanagedMetadata(),
+				DefaultAction: types.StringDefault("", types.NewUnmanagedMetadata()),
+			},
 		}
 		for _, secretResource := range orphanResources {
 			orphanage.Keys = append(orphanage.Keys, adaptKey(secretResource))

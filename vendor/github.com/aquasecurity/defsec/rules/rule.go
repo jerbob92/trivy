@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/aquasecurity/defsec/parsers/terraform"
+
 	"github.com/aquasecurity/defsec/providers"
 	"github.com/aquasecurity/defsec/severity"
 )
@@ -16,8 +18,20 @@ type EngineMetadata struct {
 	Links               []string `json:"links,omitempty"`
 }
 
+type CustomChecks struct {
+	Terraform *TerraformCustomCheck
+}
+
+type TerraformCustomCheck struct {
+	RequiredTypes   []string
+	RequiredLabels  []string
+	RequiredSources []string
+	Check           func(*terraform.Block, *terraform.Module) Results
+}
+
 type Rule struct {
 	AVDID          string             `json:"avd_id"`
+	LegacyID       string             `json:"id"`
 	ShortCode      string             `json:"short_code"`
 	Summary        string             `json:"summary"`
 	Explanation    string             `json:"explanation"`
@@ -29,6 +43,8 @@ type Rule struct {
 	Severity       severity.Severity  `json:"severity"`
 	Terraform      *EngineMetadata    `json:"terraform,omitempty"`
 	CloudFormation *EngineMetadata    `json:"cloud_formation,omitempty"`
+	CustomChecks   CustomChecks       `json:"-"`
+	RegoPackage    string             `json:"-"`
 }
 
 func (r Rule) LongID() string {

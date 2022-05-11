@@ -3,8 +3,10 @@ package autoscaling
 import (
 	"encoding/base64"
 
-	"github.com/aquasecurity/defsec/parsers/terraform"
 	"github.com/aquasecurity/defsec/parsers/types"
+
+	"github.com/aquasecurity/defsec/parsers/terraform"
+
 	"github.com/aquasecurity/defsec/providers/aws/autoscaling"
 	"github.com/aquasecurity/defsec/providers/aws/ec2"
 )
@@ -31,6 +33,9 @@ func adaptLaunchTemplates(modules terraform.Modules) (templates []autoscaling.La
 				Metadata:        b.GetMetadata(),
 				MetadataOptions: metadataOptions,
 				UserData:        userData,
+				SecurityGroups:  nil,
+				RootBlockDevice: nil,
+				EBSBlockDevices: nil,
 			},
 		})
 	}
@@ -68,6 +73,7 @@ func adaptLaunchConfiguration(resource *terraform.Block) autoscaling.LaunchConfi
 			Metadata:  resource.GetMetadata(),
 			Encrypted: types.BoolDefault(false, resource.GetMetadata()),
 		},
+		EBSBlockDevices: nil,
 		MetadataOptions: getMetadataOptions(resource),
 		UserData:        types.StringDefault("", resource.GetMetadata()),
 	}

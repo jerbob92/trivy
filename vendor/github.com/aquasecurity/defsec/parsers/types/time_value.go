@@ -72,3 +72,14 @@ func (b *timeValue) GreaterThan(i time.Time) bool {
 	}
 	return b.value.After(i)
 }
+
+func (s *timeValue) ToRego() interface{} {
+	return map[string]interface{}{
+		"filepath":  s.metadata.Range().GetFilename(),
+		"startline": s.metadata.Range().GetStartLine(),
+		"endline":   s.metadata.Range().GetEndLine(),
+		"managed":   s.metadata.isManaged,
+		"explicit":  s.metadata.isExplicit,
+		"value":     s.Value().Format(time.RFC3339),
+	}
+}

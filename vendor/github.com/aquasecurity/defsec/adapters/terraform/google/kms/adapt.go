@@ -3,8 +3,10 @@ package kms
 import (
 	"strconv"
 
-	"github.com/aquasecurity/defsec/parsers/terraform"
 	"github.com/aquasecurity/defsec/parsers/types"
+
+	"github.com/aquasecurity/defsec/parsers/terraform"
+
 	"github.com/aquasecurity/defsec/providers/google/kms"
 )
 
@@ -53,6 +55,6 @@ func adaptKey(resource *terraform.Block) kms.Key {
 		return key
 	}
 
-	key.RotationPeriodSeconds = types.Int(seconds, resource.GetMetadata())
+	key.RotationPeriodSeconds = types.Int(seconds, rotationPeriodAttr.GetMetadata())
 	return key
 }

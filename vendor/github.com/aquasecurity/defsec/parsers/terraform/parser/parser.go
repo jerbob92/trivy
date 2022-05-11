@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aquasecurity/defsec/parsers/terraform/context"
+	tfcontext "github.com/aquasecurity/defsec/parsers/terraform/context"
 	"github.com/zclconf/go-cty/cty"
 
 	"github.com/aquasecurity/defsec/parsers/terraform"
@@ -38,9 +39,10 @@ type Metrics struct {
 		ParseDuration  time.Duration
 	}
 	Counts struct {
-		Blocks  int
-		Modules int
-		Files   int
+		Blocks          int
+		Modules         int
+		ModuleDownloads int
+		Files           int
 	}
 }
 
@@ -59,16 +61,18 @@ type parser struct {
 	metrics        Metrics
 	options        []Option
 	debugWriter    io.Writer
+	allowDownloads bool
 }
 
 // New creates a new Parser
 func New(options ...Option) Parser {
 	p := &parser{
-		workspaceName: "default",
-		underlying:    hclparse.NewParser(),
-		options:       options,
-		moduleName:    "root",
-		debugWriter:   ioutil.Discard,
+		workspaceName:  "default",
+		underlying:     hclparse.NewParser(),
+		options:        options,
+		moduleName:     "root",
+		debugWriter:    ioutil.Discard,
+		allowDownloads: true,
 	}
 
 	for _, option := range options {
@@ -169,12 +173,11 @@ func (p *parser) ParseDirectory(fullPath string) error {
 
 	var paths []string
 	for _, info := range fileInfos {
-		info = resolveSymlink(fullPath, info)
+		realPath, info := resolveSymlink(fullPath, info)
 		if info.IsDir() {
 			continue
 		}
-		currentFilePath := filepath.Join(fullPath, info.Name())
-		paths = append(paths, currentFilePath)
+		paths = append(paths, realPath)
 	}
 	sort.Strings(paths)
 	for _, path := range paths {
@@ -240,8 +243,9 @@ func (p *parser) EvaluateAll() (terraform.Modules, cty.Value, error) {
 		p.workspaceName,
 		ignores,
 		p.debugWriter,
+		p.allowDownloads,
 	)
-	modules, parseDuration := evaluator.EvaluateAll()
+	modules, parseDuration := evaluator.EvaluateAll(context.TODO())
 	p.metrics.Counts.Modules = len(modules)
 	p.metrics.Timings.ParseDuration = parseDuration
 	p.debug("Finished parsing module '%s'.", p.moduleName)
@@ -251,7 +255,7 @@ func (p *parser) EvaluateAll() (terraform.Modules, cty.Value, error) {
 func (p *parser) readBlocks(files []sourceFile) (terraform.Blocks, terraform.Ignores, error) {
 	var blocks terraform.Blocks
 	var ignores terraform.Ignores
-	moduleCtx := context.NewContext(&hcl.EvalContext{}, nil)
+	moduleCtx := tfcontext.NewContext(&hcl.EvalContext{}, nil)
 	for _, file := range files {
 		fileBlocks, fileIgnores, err := loadBlocksFromFile(file)
 		if err != nil {
@@ -271,13 +275,13 @@ func (p *parser) readBlocks(files []sourceFile) (terraform.Blocks, terraform.Ign
 	return blocks, ignores, nil
 }
 
-func resolveSymlink(dir string, file os.FileInfo) os.FileInfo {
-
-	if resolvedLink, err := os.Readlink(filepath.Join(dir, file.Name())); err == nil {
-		resolvedPath := filepath.Clean(filepath.Join(dir, resolvedLink))
-		if info, err := os.Lstat(resolvedPath); err == nil {
-			return info
+func resolveSymlink(dir string, file os.FileInfo) (string, os.FileInfo) {
+	if file.Mode()&os.ModeSymlink != 0 {
+		if resolvedLink, err := os.Readlink(filepath.Join(dir, file.Name())); err == nil {
+			if info, err := os.Lstat(resolvedLink); err == nil {
+				return resolvedLink, info
+			}
 		}
 	}
-	return file
+	return filepath.Join(dir, file.Name()), file
 }

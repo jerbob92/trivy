@@ -26,9 +26,23 @@ func OptionIncludeIgnored() func(s *Scanner) {
 	}
 }
 
-// OptionWithExcludedIDs - tell the sdcanner to exclude the provided IDs
+// OptionWithExcludedIDs - tell the scanner to exclude the provided IDs
 func OptionWithExcludedIDs(exludedIDs []string) func(s *Scanner) {
 	return func(s *Scanner) {
 		s.excludedRuleIDs = exludedIDs
+	}
+}
+
+// OptionWithPolicyDirs - location of rego policy directories - policies are loaded recursively
+func OptionWithPolicyDirs(dirs []string) func(s *Scanner) {
+	return func(s *Scanner) {
+		s.policyDirs = dirs
+	}
+}
+
+// OptionWithPolicyNamespaces - namespaces which indicate rego policies containing enforced rules
+func OptionWithPolicyNamespaces(namespaces ...string) func(s *Scanner) {
+	return func(s *Scanner) {
+		s.policyNamespaces = namespaces
 	}
 }

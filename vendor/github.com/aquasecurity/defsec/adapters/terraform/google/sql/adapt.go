@@ -3,8 +3,10 @@ package sql
 import (
 	"strconv"
 
-	"github.com/aquasecurity/defsec/parsers/terraform"
 	"github.com/aquasecurity/defsec/parsers/types"
+
+	"github.com/aquasecurity/defsec/parsers/terraform"
+
 	"github.com/aquasecurity/defsec/providers/google/sql"
 )
 
@@ -32,6 +34,7 @@ func adaptInstance(resource *terraform.Block) sql.DatabaseInstance {
 		Settings: sql.Settings{
 			Metadata: resource.GetMetadata(),
 			Flags: sql.Flags{
+				Metadata:                        resource.GetMetadata(),
 				LogTempFileSize:                 types.IntDefault(-1, resource.GetMetadata()),
 				LocalInFile:                     types.BoolDefault(false, resource.GetMetadata()),
 				ContainedDatabaseAuthentication: types.BoolDefault(true, resource.GetMetadata()),
