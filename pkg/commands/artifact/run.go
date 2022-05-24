@@ -411,6 +411,7 @@ func initScannerConfig(opt Option, cacheClient cache.Cache) (ScannerConfig, type
 		configScannerOptions = config.ScannerOption{
 			Trace:        opt.Trace,
 			Namespaces:   append(opt.PolicyNamespaces, defaultPolicyNamespaces...),
+			PolicyPaths:  opt.PolicyPaths,
 			DataPaths:    opt.DataPaths,
 			FilePatterns: opt.FilePatterns,
 		}
