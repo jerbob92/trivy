@@ -2,6 +2,33 @@
 
 @samber: I sometimes forget to update this file. Ping me on [Twitter](https://twitter.com/samuelberthe) or open an issue in case of error. We need to keep a clear changelog for easier lib upgrade.
 
+## 1.19.0 (2022-04-30)
+
+Adding:
+
+- lo.RepeatBy
+- lo.Subset
+- lo.Replace
+- lo.ReplaceAll
+- lo.Substring
+- lo.RuneLength
+
+## 1.18.0 (2022-04-28)
+
+Adding:
+
+- lo.SomeBy
+- lo.EveryBy
+- lo.None
+- lo.NoneBy
+
+## 1.17.0 (2022-04-27)
+
+Adding:
+
+- lo.Unpack2 -> lo.Unpack3
+- lo.Async0 -> lo.Async6
+
 ## 1.16.0 (2022-04-26)
 
 Adding:

@@ -100,9 +100,15 @@ Supported math helpers:
 - Range / RangeFrom / RangeWithSteps
 - Clamp
 
+Supported helpers for strings:
+
+- Substring
+- RuneLength
+
 Supported helpers for tuples:
 
 - T2 -> T9
+- Unpack2 -> Unpack9
 - Zip2 -> Zip9
 - Unzip2 -> Unzip9
 
@@ -111,7 +117,11 @@ Supported intersection helpers:
 - Contains
 - ContainsBy
 - Every
+- EveryBy
 - Some
+- SomeBy
+- None
+- NoneBy
 - Intersect
 - Difference
 - Union
@@ -458,8 +468,24 @@ func (f foo) Clone() foo {
 	return foo{f.bar}
 }
 
-initializedSlice := lo.Repeat[foo](2, foo{"a"})
+slice := lo.Repeat[foo](2, foo{"a"})
 // []foo{foo{"a"}, foo{"a"}}
+```
+
+### RepeatBy
+
+Builds a slice with values returned by N calls of callback.
+
+```go
+slice := lo.RepeatBy[int](0, func (i int) int {
+    return math.Pow(i, 2)
+})
+// []int{}
+
+slice := lo.RepeatBy[int](5, func (i int) int {
+    return math.Pow(i, 2)
+})
+// []int{0, 1, 4, 9, 16}
 ```
 
 ### KeyBy
@@ -542,7 +568,7 @@ odd := lo.Reject[int]([]int{1, 2, 3, 4}, func(x int, _ int) bool {
 Counts the number of elements in the collection that compare equal to value.
 
 ```go
-count := Count[int]([]int{1, 5, 1}, 1)
+count := lo.Count[int]([]int{1, 5, 1}, 1)
 // 2
 ```
 
@@ -551,10 +577,61 @@ count := Count[int]([]int{1, 5, 1}, 1)
 Counts the number of elements in the collection for which predicate is true.
 
 ```go
-count := CountBy[int]([]int{1, 5, 1}, func(i int) bool {
+count := lo.CountBy[int]([]int{1, 5, 1}, func(i int) bool {
     return i < 4
 })
 // 2
+```
+
+### Subset
+
+Return part of a slice.
+
+```go
+in := []int{0, 1, 2, 3, 4}
+
+sub := lo.Subset(in, 2, 3)
+// []int{2, 3, 4}
+
+sub := lo.Subset(in, -4, 3)
+// []int{1, 2, 3}
+
+sub := lo.Subset(in, -2, math.MaxUint)
+// []int{3, 4}
+```
+
+### Replace
+
+Returns a copy of the slice with the first n non-overlapping instances of old replaced by new.
+
+```go
+in := []int{0, 1, 0, 1, 2, 3, 0}
+
+slice := lo.Replace(in, 0, 42, 1)
+// []int{42, 1, 0, 1, 2, 3, 0}
+
+slice := lo.Replace(in, -1, 42, 1)
+// []int{0, 1, 0, 1, 2, 3, 0}
+
+slice := lo.Replace(in, 0, 42, 2)
+// []int{42, 1, 42, 1, 2, 3, 0}
+
+slice := lo.Replace(in, 0, 42, -1)
+// []int{42, 1, 42, 1, 2, 3, 42}
+```
+
+### ReplaceAll
+
+Returns a copy of the slice with all non-overlapping instances of old replaced by new.
+
+```go
+in := []int{0, 1, 0, 1, 2, 3, 0}
+
+slice := lo.ReplaceAll(in, 0, 42)
+// []int{42, 1, 42, 1, 2, 3, 42}
+
+slice := lo.ReplaceAll(in, -1, 42)
+// []int{0, 1, 0, 1, 2, 3, 0}
 ```
 
 ### Keys
@@ -762,6 +839,33 @@ r3 := lo.Clamp(42, -10, 10)
 // 10
 ```
 
+### Substring
+
+Return part of a string.
+
+```go
+sub := lo.Substring("hello", 2, 3)
+// "llo"
+
+sub := lo.Substring("hello", -4, 3)
+// "ell"
+
+sub := lo.Substring("hello", -2, math.MaxUint)
+// "lo"
+```
+
+### RuneLength
+
+An alias to utf8.RuneCountInString which returns the number of runes in string.
+
+```go
+sub := lo.RuneLength("hellô")
+// 5
+
+sub := len("hellô")
+// 6
+```
+
 ### T2 -> T9
 
 Creates a tuple from a list of values.
@@ -773,6 +877,15 @@ tuple1 := lo.T2[string, int]("x", 1)
 func example() (string, int) { return "y", 2 }
 tuple2 := lo.T2[string, int](example())
 // Tuple2[string, int]{A: "y", B: 2}
+```
+
+### Unpack2 -> Unpack9
+
+Returns values contained in tuple.
+
+```go
+r1, r2 := lo.Unpack2[string, int](lo.Tuple2[string, int]{"a", 1})
+// "a", 1
 ```
 
 ### Zip2 -> Zip9
@@ -798,7 +911,7 @@ a, b := lo.Unzip2[string, int]([]Tuple2[string, int]{{A: "a", B: 1}, {A: "b", B:
 
 ### Every
 
-Returns true if all elements of a subset are contained into a collection.
+Returns true if all elements of a subset are contained into a collection or if the subset is empty.
 
 ```go
 ok := lo.Every[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 2})
@@ -808,9 +921,21 @@ ok := lo.Every[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 6})
 // false
 ```
 
+### EveryBy
+
+Returns true if the predicate returns true for all of the elements in the collection or if the collection is empty.
+
+```go
+b := EveryBy[int]([]int{1, 2, 3, 4}, func(x int) bool {
+    return x < 5
+})
+// true
+```
+
 ### Some
 
 Returns true if at least 1 element of a subset is contained into a collection.
+If the subset is empty Some returns false.
 
 ```go
 ok := lo.Some[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 2})
@@ -818,6 +943,40 @@ ok := lo.Some[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 2})
 
 ok := lo.Some[int]([]int{0, 1, 2, 3, 4, 5}, []int{-1, 6})
 // false
+```
+
+### SomeBy
+
+Returns true if the predicate returns true for any of the elements in the collection. 
+If the collection is empty SomeBy returns false.
+
+```go
+b := SomeBy[int]([]int{1, 2, 3, 4}, func(x int) bool {
+    return x < 3
+})
+// true
+```
+
+### None
+
+Returns true if no element of a subset are contained into a collection or if the subset is empty.
+
+```go
+b := None[int]([]int{0, 1, 2, 3, 4, 5}, []int{0, 2})
+// false
+b := None[int]([]int{0, 1, 2, 3, 4, 5}, []int{-1, 6})
+// true
+```
+
+### NoneBy
+
+Returns true if the predicate returns true for none of the elements in the collection or if the collection is empty.
+
+```go
+b := NoneBy[int]([]int{1, 2, 3, 4}, func(x int) bool {
+    return x < 0
+})
+// true
 ```
 
 ### Intersect
@@ -1172,15 +1331,15 @@ lo.Empty[bool]()
 Returns the first non-empty arguments. Arguments must be comparable.
 
 ```go
-result, ok := Coalesce(0, 1, 2, 3)
+result, ok := lo.Coalesce(0, 1, 2, 3)
 // 1 true
 
-result, ok := Coalesce("")
+result, ok := lo.Coalesce("")
 // "" false
 
 var nilStr *string
 str := "foobar"
-result, ok := Coalesce[*string](nil, nilStr, &str)
+result, ok := lo.Coalesce[*string](nil, nilStr, &str)
 // &"foobar" true
 ```
 
@@ -1268,12 +1427,29 @@ Executes a function in a goroutine and returns the result in a channel.
 ```go
 ch := lo.Async(func() error { time.Sleep(10 * time.Second); return nil })
 // chan error (nil)
+```
 
-ch := lo.Async(func() lo.Tuple2[int, error] {
+### Async{0->6}
+
+Executes a function in a goroutine and returns the result in a channel.
+For function with multiple return values, the results will be returned as a tuple inside the channel.
+For function without return, struct{} will be returned in the channel.
+
+```go
+ch := lo.Async0(func() { time.Sleep(10 * time.Second) })
+// chan struct{}
+
+ch := lo.Async1(func() int {
   time.Sleep(10 * time.Second);
-  return lo.Tuple2[int, error]{42, nil}
+  return 42
 })
-// chan lo.Tuple2[int, error] ({42, nil})
+// chan int (42)
+
+ch := lo.Async2(func() (int, string) {
+  time.Sleep(10 * time.Second);
+  return 42, "Hello"
+})
+// chan lo.Tuple2[int, string] ({42, "Hello"})
 ```
 
 ### Must

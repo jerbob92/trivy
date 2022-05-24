@@ -7,18 +7,16 @@ import (
 	"github.com/aquasecurity/fanal/analyzer"
 	misconf "github.com/aquasecurity/fanal/analyzer/config"
 	"github.com/aquasecurity/fanal/analyzer/secret"
-	"github.com/aquasecurity/fanal/hook"
 	"github.com/aquasecurity/fanal/types"
 )
 
 type Option struct {
 	AnalyzerGroup     analyzer.Group // It is empty in OSS
 	DisabledAnalyzers []analyzer.Type
-	DisabledHooks     []hook.Type
+	DisabledHandlers  []types.HandlerType
 	SkipFiles         []string
 	SkipDirs          []string
 	FilePatterns      []string
-	Quiet             bool
 	NoProgress        bool
 	Offline           bool
 	InsecureSkipTLS   bool
