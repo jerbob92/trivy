@@ -22,9 +22,14 @@ func init() {
 		"Fn::GetAtt":      ResolveGetAtt,
 		"Fn::GetAZs":      GetAzs,
 		"Fn::Cidr":        GetCidr,
-		"Fn::ImportValue": PassthroughResolution,
+		"Fn::ImportValue": ImportPlaceholder,
 		// "Fn::If":        PassthroughResolution,
 	}
+}
+
+func ImportPlaceholder(property *Property) (*Property, bool) {
+	property.unresolved = true
+	return property, false
 }
 
 func PassthroughResolution(property *Property) (*Property, bool) {
@@ -63,7 +68,7 @@ func ResolveIntrinsicFunc(property *Property) (*Property, bool) {
 		return nil, false
 	}
 	if !property.IsMap() {
-		return property, true
+		return property, false
 	}
 
 	for funcName := range property.AsMap() {

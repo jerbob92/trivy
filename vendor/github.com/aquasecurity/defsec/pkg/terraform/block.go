@@ -338,13 +338,19 @@ func (b *Block) FullName() string {
 func (b *Block) ModuleName() string {
 	name := strings.TrimPrefix(b.LocalName(), "module.")
 	if b.moduleBlock != nil {
+		module := strings.TrimPrefix(b.moduleBlock.FullName(), "module.")
 		name = fmt.Sprintf(
 			"%s.%s",
-			strings.TrimPrefix(b.moduleBlock.FullName(), "module."),
+			module,
 			name,
 		)
 	}
-	return strings.Split(name, "[")[0]
+	var parts []string
+	for _, part := range strings.Split(name, ".") {
+		part = strings.Split(part, "[")[0]
+		parts = append(parts, part)
+	}
+	return strings.Join(parts, ".")
 }
 
 func (b *Block) UniqueName() string {
@@ -430,6 +436,10 @@ func (b *Block) Attributes() map[string]*Attribute {
 
 func (b *Block) Values() cty.Value {
 	values := make(map[string]cty.Value)
+	// here we set up common "id" values that are set by the provider - this ensures all blocks have a default
+	// referencable id/arn. this isn't perfect, but the only way to link blocks in certain circumstances.
+	values["id"] = cty.StringVal(b.ID())
+	values["arn"] = cty.StringVal(b.ID())
 	for _, attribute := range b.GetAttributes() {
 		values[attribute.Name()] = attribute.Value()
 	}

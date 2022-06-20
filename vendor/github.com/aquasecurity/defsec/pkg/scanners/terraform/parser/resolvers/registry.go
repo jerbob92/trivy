@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -32,6 +33,9 @@ type moduleVersions struct {
 	} `json:"modules"`
 }
 
+const registryHostname = "registry.terraform.io"
+
+// nolint
 func (r *registryResolver) Resolve(ctx context.Context, target fs.FS, opt Options) (filesystem fs.FS, prefix string, downloadPath string, applies bool, err error) {
 
 	if !opt.AllowDownloads {
@@ -39,16 +43,25 @@ func (r *registryResolver) Resolve(ctx context.Context, target fs.FS, opt Option
 	}
 
 	inputVersion := opt.Version
-
-	parts := strings.Split(opt.Source, "/")
-	if len(parts) != 3 && len(parts) != 4 {
+	source, relativePath, _ := strings.Cut(opt.Source, "//")
+	parts := strings.Split(source, "/")
+	if len(parts) < 3 || len(parts) > 4 {
 		return
 	}
 
-	hostname := "registry.terraform.io"
+	hostname := registryHostname
+	var token string
 	if len(parts) == 4 {
 		hostname = parts[0]
 		parts = parts[1:]
+
+		envVar := fmt.Sprintf("TF_TOKEN_%s", strings.ReplaceAll(hostname, ".", "_"))
+		token = os.Getenv(envVar)
+		if token != "" {
+			opt.Debug("Found a token for the registry at %s", hostname)
+		} else {
+			opt.Debug("No token was found for the registry at %s", hostname)
+		}
 	}
 
 	moduleName := strings.Join(parts, "/")
@@ -59,6 +72,9 @@ func (r *registryResolver) Resolve(ctx context.Context, target fs.FS, opt Option
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, versionUrl, nil)
 		if err != nil {
 			return nil, "", "", true, err
+		}
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
 		}
 		resp, err := r.client.Do(req)
 		if err != nil {
@@ -93,6 +109,9 @@ func (r *registryResolver) Resolve(ctx context.Context, target fs.FS, opt Option
 	if err != nil {
 		return nil, "", "", true, err
 	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 	if opt.Version != "" {
 		req.Header.Set("X-Terraform-Version", opt.Version)
 	}
@@ -108,10 +127,12 @@ func (r *registryResolver) Resolve(ctx context.Context, target fs.FS, opt Option
 
 	opt.Source = resp.Header.Get("X-Terraform-Get")
 	opt.Debug("Module '%s' resolved via registry to new source: '%s'", opt.Name, opt.Source)
+	opt.RelativePath = relativePath
 	filesystem, prefix, downloadPath, _, err = Remote.Resolve(ctx, target, opt)
 	if err != nil {
 		return nil, "", "", true, err
 	}
+
 	return filesystem, prefix, downloadPath, true, nil
 }
 

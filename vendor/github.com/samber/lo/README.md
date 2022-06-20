@@ -99,6 +99,7 @@ Supported math helpers:
 
 - Range / RangeFrom / RangeWithSteps
 - Clamp
+- SumBy
 
 Supported helpers for strings:
 
@@ -142,13 +143,18 @@ Supported search helpers:
 - Sample
 - Samples
 
-Other functional programming helpers:
+Conditional helpers:
 
 - Ternary (1 line if/else statement)
 - If / ElseIf / Else
 - Switch / Case / Default
+
+Type manipulation helpers:
+
 - ToPtr
 - ToSlicePtr
+- ToAnySlice
+- FromAnySlice
 - Empty
 - Coalesce
 
@@ -839,6 +845,19 @@ r3 := lo.Clamp(42, -10, 10)
 // 10
 ```
 
+### SumBy 
+
+Summarizes the values in a collection using the given return value from the iteration function.
+If collection is empty 0 is returned.
+
+```go
+strings := []string{"foo", "bar"}
+sum := lo.SumBy(strings, func(item string) int {
+    return len(item)
+})
+// 6
+```
+
 ### Substring
 
 Return part of a string.
@@ -1313,6 +1332,27 @@ ptr := lo.ToSlicePtr[string]([]string{"hello", "world"})
 // []*string{"hello", "world"}
 ```
 
+### ToAnySlice
+
+Returns a slice with all elements mapped to `any` type.
+
+```go
+elements := lo.ToAnySlice[int]([]int{1, 5, 1})
+// []any{1, 5, 1}
+```
+
+### FromAnySlice
+
+Returns an `any` slice with all elements mapped to a type. Returns false in case of type conversion failure.
+
+```go
+elements, ok := lo.FromAnySlice[string]([]any{"foobar", 42})
+// []string{}, false
+
+elements, ok := lo.FromAnySlice[string]([]any{"foobar", "42"})
+// []string{"foobar", "42"}, true
+```
+
 ### Empty
 
 Returns an empty value.
@@ -1418,6 +1458,33 @@ for j := 0; j < 10; j++ {
 
 time.Sleep(1 * time.Second)
 cancel()
+```
+
+### Synchronize
+
+Wraps the underlying callback in a mutex. It receives an optional mutex.
+
+```go
+s := lo.Synchronize()
+
+for i := 0; i < 10; i++ {
+    go s.Do(func () {
+        println("will be called sequentially")
+    })
+}
+```
+
+It is equivalent to:
+
+```go
+mu := sync.Mutex{}
+
+func foobar() {
+    mu.Lock()
+    defer mu.Unlock()
+
+    // ...
+}
 ```
 
 ### Async

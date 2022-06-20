@@ -2,6 +2,23 @@
 
 @samber: I sometimes forget to update this file. Ping me on [Twitter](https://twitter.com/samuelberthe) or open an issue in case of error. We need to keep a clear changelog for easier lib upgrade.
 
+## 1.21.0 (2022-05-10)
+
+Adding:
+
+- lo.ToAnySlice
+- lo.FromAnySlice
+
+## 1.20.0 (2022-05-02)
+
+Adding:
+
+- lo.Synchronize
+- lo.SumBy
+
+Change:
+- Removed generic type definition for lo.Try0: `lo.Try0[T]()` -> `lo.Try0()`
+
 ## 1.19.0 (2022-04-30)
 
 Adding:

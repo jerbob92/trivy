@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/aquasecurity/defsec/internal/debug"
+	"github.com/aquasecurity/defsec/pkg/debug"
 
 	"github.com/aquasecurity/defsec/pkg/scanners/options"
 
@@ -52,7 +52,7 @@ func (s *Scanner) SetSkipRequiredCheck(skip bool) {
 }
 
 func (s *Scanner) SetDebugWriter(writer io.Writer) {
-	s.debug = debug.New(writer, "scan:dockerfile")
+	s.debug = debug.New(writer, "dockerfile", "scanner")
 }
 
 func (s *Scanner) SetTraceWriter(_ io.Writer) {
@@ -137,6 +137,7 @@ func (s *Scanner) initRegoScanner(srcFS fs.FS) (*rego.Scanner, error) {
 		return s.regoScanner, nil
 	}
 	regoScanner := rego.NewScanner(s.options...)
+	regoScanner.SetParentDebugLogger(s.debug)
 	if err := regoScanner.LoadPolicies(s.loadEmbedded, srcFS, s.policyDirs, s.policyReaders); err != nil {
 		return nil, err
 	}
@@ -153,6 +154,6 @@ func (s *Scanner) scanRego(ctx context.Context, srcFS fs.FS, inputs ...rego.Inpu
 	if err != nil {
 		return nil, err
 	}
-	results.SetSourceAndFilesystem("", srcFS)
+	results.SetSourceAndFilesystem("", srcFS, false)
 	return results, nil
 }

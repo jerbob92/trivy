@@ -11,7 +11,7 @@ func Adapt(modules terraform.Modules) database.Database {
 	mssqlAdapter := mssqlAdapter{
 		alertPolicyIDs:    modules.GetChildResourceIDMapByType("azurerm_mssql_server_security_alert_policy"),
 		auditingPolicyIDs: modules.GetChildResourceIDMapByType("azurerm_mssql_server_extended_auditing_policy", "azurerm_mssql_database_extended_auditing_policy"),
-		firewallIDs:       modules.GetChildResourceIDMapByType("azurerm_sql_firewall_rule"),
+		firewallIDs:       modules.GetChildResourceIDMapByType("azurerm_sql_firewall_rule", "azurerm_mssql_firewall_rule"),
 	}
 
 	mysqlAdapter := mysqlAdapter{
@@ -260,7 +260,9 @@ func (a *mssqlAdapter) adaptMSSQLServer(resource *terraform.Block, module *terra
 	}
 
 	firewallRuleBlocks := module.GetReferencingResources(resource, "azurerm_sql_firewall_rule", "server_name")
+	firewallRuleBlocks = append(firewallRuleBlocks, module.GetReferencingResources(resource, "azurerm_mssql_firewall_rule", "server_id")...)
 	for _, firewallBlock := range firewallRuleBlocks {
+		a.firewallIDs.Resolve(firewallBlock.ID())
 		firewallRules = append(firewallRules, adaptFirewallRule(firewallBlock))
 	}
 
@@ -396,28 +398,17 @@ func adaptPostgreSQLConfig(resource *terraform.Block, configBlocks []*terraform.
 }
 
 func adaptMSSQLSecurityAlertPolicy(resource *terraform.Block) database.SecurityAlertPolicy {
-	var emailAddressesVal []types.StringValue
-	var disabledAlertsVal []types.StringValue
 
 	emailAddressesAttr := resource.GetAttribute("email_addresses")
-	emailAddresses := emailAddressesAttr.ValueAsStrings()
-	for _, email := range emailAddresses {
-		emailAddressesVal = append(emailAddressesVal, types.String(email, emailAddressesAttr.GetMetadata()))
-	}
-
 	disabledAlertsAttr := resource.GetAttribute("disabled_alerts")
-	disabledAlerts := disabledAlertsAttr.ValueAsStrings()
-	for _, alert := range disabledAlerts {
-		disabledAlertsVal = append(disabledAlertsVal, types.String(alert, disabledAlertsAttr.GetMetadata()))
-	}
 
 	emailAccountAdminsAttr := resource.GetAttribute("email_account_admins")
 	emailAccountAdminsVal := emailAccountAdminsAttr.AsBoolValueOrDefault(false, resource)
 
 	return database.SecurityAlertPolicy{
 		Metadata:           resource.GetMetadata(),
-		EmailAddresses:     emailAddressesVal,
-		DisabledAlerts:     disabledAlertsVal,
+		EmailAddresses:     emailAddressesAttr.AsStringValues(),
+		DisabledAlerts:     disabledAlertsAttr.AsStringValues(),
 		EmailAccountAdmins: emailAccountAdminsVal,
 	}
 }

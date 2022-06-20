@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"strings"
+
 	"github.com/aquasecurity/defsec/internal/types"
 	"github.com/aquasecurity/defsec/pkg/providers/azure/storage"
 	"github.com/aquasecurity/defsec/pkg/terraform"
@@ -38,7 +40,6 @@ func adaptOrphanContainers(modules terraform.Modules, containers []string) (orph
 			if _, ok := accountedFor[containerResource.ID()]; ok {
 				continue
 			}
-
 			orphans = append(orphans, adaptContainer(containerResource))
 		}
 	}
@@ -127,12 +128,12 @@ func adaptAccount(resource *terraform.Block) storage.Account {
 
 func adaptContainer(resource *terraform.Block) storage.Container {
 	accessTypeAttr := resource.GetAttribute("container_access_type")
-	publicAccess := types.String(storage.PublicAccessOff, resource.GetMetadata())
+	publicAccess := types.StringDefault(storage.PublicAccessOff, resource.GetMetadata())
 
 	if accessTypeAttr.Equals("blob") {
-		publicAccess = types.String(storage.PublicAccessBlob, resource.GetMetadata())
+		publicAccess = types.String(storage.PublicAccessBlob, accessTypeAttr.GetMetadata())
 	} else if accessTypeAttr.Equals("container") {
-		publicAccess = types.String(storage.PublicAccessContainer, resource.GetMetadata())
+		publicAccess = types.String(storage.PublicAccessContainer, accessTypeAttr.GetMetadata())
 	}
 
 	return storage.Container{
@@ -146,18 +147,21 @@ func adaptNetworkRule(resource *terraform.Block) storage.NetworkRule {
 	var bypass []types.StringValue
 
 	defaultActionAttr := resource.GetAttribute("default_action")
-	if defaultActionAttr.Equals("allow", terraform.IgnoreCase) {
-		allowByDefault = types.Bool(true, resource.GetMetadata())
-	} else if defaultActionAttr.Equals("deny", terraform.IgnoreCase) {
-		allowByDefault = types.Bool(false, resource.GetMetadata())
+
+	if defaultActionAttr.IsNotNil() {
+		switch strings.ToLower(defaultActionAttr.Value().AsString()) {
+		case "allow":
+			allowByDefault = types.Bool(true, defaultActionAttr.GetMetadata())
+		case "deny":
+			allowByDefault = types.Bool(false, defaultActionAttr.GetMetadata())
+		}
+	} else {
+		allowByDefault = types.BoolDefault(false, resource.GetMetadata())
 	}
 
 	if resource.HasChild("bypass") {
 		bypassAttr := resource.GetAttribute("bypass")
-		bypassList := bypassAttr.ValueAsStrings()
-		for _, bypassVal := range bypassList {
-			bypass = append(bypass, types.String(bypassVal, resource.GetMetadata()))
-		}
+		bypass = bypassAttr.AsStringValues()
 	}
 
 	return storage.NetworkRule{

@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 )
 
 const (
@@ -582,6 +583,8 @@ const (
 	SeverityCritical Severity = "critical"
 )
 
+var serialNumberRegex = regexp.MustCompile(`^urn:uuid:[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$`)
+
 type Source struct {
 	Name string `json:"name,omitempty" xml:"name,omitempty"`
 	URL  string `json:"url,omitempty" xml:"url,omitempty"`
@@ -623,6 +626,7 @@ type Vulnerability struct {
 	Tools          *[]Tool                   `json:"tools,omitempty" xml:"tools>tool,omitempty"`
 	Analysis       *VulnerabilityAnalysis    `json:"analysis,omitempty" xml:"analysis,omitempty"`
 	Affects        *[]Affects                `json:"affects,omitempty" xml:"affects>target,omitempty"`
+	Properties     *[]Property               `json:"properties,omitempty" xml:"properties>property,omitempty"`
 }
 
 type VulnerabilityAnalysis struct {

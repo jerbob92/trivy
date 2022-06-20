@@ -6,6 +6,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -58,24 +59,38 @@ type cluster struct {
 	restMapper       meta.RESTMapper
 }
 
-// GetCluster returns a current configured cluster
-func GetCluster() (Cluster, error) {
+// GetCluster returns a current configured cluster,
+// receives context to use, if empty uses default
+func GetCluster(context string) (Cluster, error) {
 	cf := genericclioptions.NewConfigFlags(true)
 
-	kubeConfig, err := cf.ToRESTConfig()
+	cf.Context = &context
+
+	// disable warnings
+	rest.SetDefaultWarningHandler(rest.NoWarnings{})
+
+	clientConfig := cf.ToRawKubeConfigLoader()
+
+	restMapper, err := cf.ToRESTMapper()
 	if err != nil {
 		return nil, err
 	}
 
-	// disable warnings
-	rest.SetDefaultWarningHandler(rest.NoWarnings{})
+	return getCluster(clientConfig, restMapper)
+}
+
+func getCluster(clientConfig clientcmd.ClientConfig, restMapper meta.RESTMapper) (*cluster, error) {
+	kubeConfig, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	k8sDynamicClient, err := dynamic.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	rawCfg, err := cf.ToRawKubeConfigLoader().RawConfig()
+	rawCfg, err := clientConfig.RawConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -85,9 +100,8 @@ func GetCluster() (Cluster, error) {
 		namespace = context.Namespace
 	}
 
-	restMapper, err := cf.ToRESTMapper()
-	if err != nil {
-		return nil, err
+	if len(namespace) == 0 {
+		namespace = "default"
 	}
 
 	return &cluster{
@@ -124,12 +138,12 @@ func (c *cluster) GetGVRs(namespaced bool) ([]schema.GroupVersionResource, error
 	}
 
 	for _, resource := range resources {
-		list, err := c.restMapper.ResourcesFor(schema.GroupVersionResource{Resource: resource})
+		gvr, err := c.GetGVR(resource)
 		if err != nil {
 			return nil, err
 		}
 
-		grvs = append(grvs, list...)
+		grvs = append(grvs, gvr)
 	}
 
 	return grvs, nil
@@ -137,6 +151,16 @@ func (c *cluster) GetGVRs(namespaced bool) ([]schema.GroupVersionResource, error
 
 func (c *cluster) GetGVR(kind string) (schema.GroupVersionResource, error) {
 	return c.restMapper.ResourceFor(schema.GroupVersionResource{Resource: kind})
+}
+
+// IsClusterResource returns if a GVR is a cluster resource
+func IsClusterResource(gvr schema.GroupVersionResource) bool {
+	for _, r := range getClusterResources() {
+		if gvr.Resource == r {
+			return true
+		}
+	}
+	return false
 }
 
 func getClusterResources() []string {

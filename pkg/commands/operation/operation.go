@@ -33,7 +33,7 @@ type Cache struct {
 // NewCache is the factory method for Cache
 func NewCache(c option.CacheOption) (Cache, error) {
 	if strings.HasPrefix(c.CacheBackend, "redis://") {
-		log.Logger.Infof("Redis cache: %s", c.CacheBackend)
+		log.Logger.Infof("Redis cache: %s", c.CacheBackendMasked())
 		options, err := redis.ParseURL(c.CacheBackend)
 		if err != nil {
 			return Cache{}, err
@@ -98,8 +98,8 @@ func (c Cache) ClearArtifacts() error {
 }
 
 // DownloadDB downloads the DB
-func DownloadDB(appVersion, cacheDir, dbRepository string, quiet, skipUpdate bool) error {
-	client := db.NewClient(cacheDir, quiet, db.WithDBRepository(dbRepository))
+func DownloadDB(appVersion, cacheDir, dbRepository string, quiet, insecure, skipUpdate bool) error {
+	client := db.NewClient(cacheDir, quiet, insecure, db.WithDBRepository(dbRepository))
 	ctx := context.Background()
 	needsUpdate, err := client.NeedsUpdate(appVersion, skipUpdate)
 	if err != nil {

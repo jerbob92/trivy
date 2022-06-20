@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 type Severity int
@@ -41,13 +39,6 @@ var (
 		"HIGH",
 		"CRITICAL",
 	}
-	SeverityColor = []func(a ...interface{}) string{
-		color.New(color.FgCyan).SprintFunc(),
-		color.New(color.FgBlue).SprintFunc(),
-		color.New(color.FgYellow).SprintFunc(),
-		color.New(color.FgHiRed).SprintFunc(),
-		color.New(color.FgRed).SprintFunc(),
-	}
 )
 
 func NewSeverity(severity string) (Severity, error) {
@@ -63,15 +54,6 @@ func CompareSeverityString(sev1, sev2 string) int {
 	s1, _ := NewSeverity(sev1)
 	s2, _ := NewSeverity(sev2)
 	return int(s2) - int(s1)
-}
-
-func ColorizeSeverity(severity string) string {
-	for i, name := range SeverityNames {
-		if severity == name {
-			return SeverityColor[i](severity)
-		}
-	}
-	return color.New(color.FgBlue).SprintFunc()(severity)
 }
 
 func (s Severity) String() string {
@@ -115,6 +97,10 @@ type DataSource struct {
 type Advisory struct {
 	VulnerabilityID string   `json:",omitempty"` // CVE-ID or vendor ID
 	VendorIDs       []string `json:",omitempty"` // e.g. RHSA-ID and DSA-ID
+
+	// Rpm packages have advisories for different architectures with same package name
+	// This field is required to separate these packages.
+	Arches []string `json:"-"`
 
 	// It is filled only when FixedVersion is empty since it is obvious the state is "Fixed" when FixedVersion is not empty.
 	// e.g. Will not fix and Affected

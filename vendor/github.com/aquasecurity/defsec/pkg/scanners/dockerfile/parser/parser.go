@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aquasecurity/defsec/internal/debug"
+	"github.com/aquasecurity/defsec/pkg/debug"
+
 	"github.com/aquasecurity/defsec/pkg/detection"
 	"github.com/aquasecurity/defsec/pkg/providers/dockerfile"
 	"github.com/aquasecurity/defsec/pkg/scanners/options"
@@ -24,7 +25,7 @@ type Parser struct {
 }
 
 func (p *Parser) SetDebugWriter(writer io.Writer) {
-	p.debug = debug.New(writer, "parse:dockerfile")
+	p.debug = debug.New(writer, "dockerfile", "parser")
 }
 
 func (p *Parser) SetSkipRequiredCheck(b bool) {
@@ -95,8 +96,7 @@ func (p *Parser) parse(path string, r io.Reader) (*dockerfile.Dockerfile, error)
 	}
 
 	var parsedFile dockerfile.Dockerfile
-	parsedFile.Stages = make(map[string][]dockerfile.Command)
-
+	var stage dockerfile.Stage
 	var stageIndex int
 	fromValue := "args"
 	for _, child := range parsed.AST.Children {
@@ -108,10 +108,16 @@ func (p *Parser) parse(path string, r io.Reader) (*dockerfile.Dockerfile, error)
 		}
 
 		if _, ok := instr.(*instructions.Stage); ok {
+			if len(stage.Commands) > 0 {
+				parsedFile.Stages = append(parsedFile.Stages, stage)
+			}
 			if fromValue != "args" {
 				stageIndex++
 			}
 			fromValue = strings.TrimSpace(strings.TrimPrefix(child.Original, "FROM "))
+			stage = dockerfile.Stage{
+				Name: fromValue,
+			}
 		}
 
 		cmd := dockerfile.Command{
@@ -134,8 +140,11 @@ func (p *Parser) parse(path string, r io.Reader) (*dockerfile.Dockerfile, error)
 			cmd.Value = append(cmd.Value, n.Value)
 		}
 
-		parsedFile.Stages[fromValue] = append(parsedFile.Stages[fromValue], cmd)
+		stage.Commands = append(stage.Commands, cmd)
 
+	}
+	if len(stage.Commands) > 0 {
+		parsedFile.Stages = append(parsedFile.Stages, stage)
 	}
 
 	return &parsedFile, nil

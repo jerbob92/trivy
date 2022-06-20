@@ -2,9 +2,11 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	"github.com/hashicorp/go-getter"
@@ -21,12 +23,12 @@ var Remote = &remoteResolver{
 
 func (r *remoteResolver) incrementCount(o Options) {
 	o.Debug("Incrementing the download counter")
-	atomic.CompareAndSwapInt32(&r.count, int32(r.count), int32(r.count+1))
+	atomic.CompareAndSwapInt32(&r.count, r.count, r.count+1)
 	o.Debug("Download counter is now %d", r.count)
 }
 
 func (r *remoteResolver) GetDownloadCount() int {
-	return int(r.count)
+	return int(atomic.LoadInt32(&r.count))
 }
 
 func (r *remoteResolver) Resolve(ctx context.Context, _ fs.FS, opt Options) (filesystem fs.FS, prefix string, downloadPath string, applies bool, err error) {
@@ -38,16 +40,28 @@ func (r *remoteResolver) Resolve(ctx context.Context, _ fs.FS, opt Options) (fil
 		return nil, "", "", false, nil
 	}
 
-	key := cacheKey(opt.OriginalSource, opt.OriginalVersion)
+	if opt.RelativePath == "" && strings.LastIndex(opt.Source, "//") > strings.Index(opt.Source, "/") {
+		parts := strings.Split(opt.Source, "//")
+		opt.RelativePath = parts[len(parts)-1]
+		opt.Source = strings.TrimSuffix(opt.Source, "//"+opt.RelativePath)
+	}
+
+	key := cacheKey(opt.OriginalSource, opt.OriginalVersion, opt.RelativePath)
 	opt.Debug("Storing with cache key %s", key)
-	cacheDir := filepath.Join(cacheDir(), key)
+
+	baseCacheDir, err := locateCacheDir()
+	if err != nil {
+		return nil, "", "", true, fmt.Errorf("failed to locate cache directory: %w", err)
+	}
+	cacheDir := filepath.Join(baseCacheDir, key)
 	if err := r.download(ctx, opt, cacheDir); err != nil {
 		return nil, "", "", true, err
 	}
+
 	r.incrementCount(opt)
 	opt.Debug("Successfully downloaded %s from %s", opt.Name, opt.Source)
 	opt.Debug("Module '%s' resolved via remote download.", opt.Name)
-	return os.DirFS(cacheDir), opt.Source, ".", true, nil
+	return os.DirFS(cacheDir), opt.Source, filepath.Join(".", opt.RelativePath), true, nil
 }
 
 func (r *remoteResolver) download(ctx context.Context, opt Options, dst string) error {
