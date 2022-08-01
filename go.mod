@@ -174,7 +174,7 @@ require (
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.8 // indirect
 	google.golang.org/api v0.62.0 // indirect
@@ -197,7 +197,7 @@ require (
 )
 
 require (
-	github.com/aquasecurity/table v1.5.1
+	github.com/aquasecurity/table v1.7.2
 	github.com/aquasecurity/trivy-kubernetes v0.2.1
 )
 
